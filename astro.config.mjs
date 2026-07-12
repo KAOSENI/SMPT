@@ -4,7 +4,7 @@ import { defineConfig } from 'astro/config';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://kaoseni.github.io',
-  base: '/SMPT/',  // ← Solo agregué la barra final
+  base: '/SMPT',
   outDir: './dist',
   vite: {
     optimizeDeps: {
