@@ -93,7 +93,7 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
 <!-- ============================================ -->
 <!-- 3. VENTANA FLOTANTE DE ESTADÍSTICAS         -->
 <!-- ============================================ -->
-<div id="stats-overlay" class="stats-overlay" style="display:none;">
+<div id="stats-overlay" class="stats-overlay">
   <div class="stats-modal">
     <div class="stats-header">
       <h2 class="stats-title">
@@ -196,6 +196,88 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   }
 
   // ============================================================
+  // FUNCIONES DEL MODAL CORREGIDAS
+  // ============================================================
+
+  function openStatsModal(): void {
+    const overlay = document.getElementById('stats-overlay');
+    if (!overlay) return;
+    
+    try {
+      updateStatsModal();
+      overlay.style.display = 'flex';
+      void overlay.offsetHeight;
+      overlay.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    } catch {}
+  }
+
+  function closeStatsModal(): void {
+    const overlay = document.getElementById('stats-overlay');
+    if (!overlay) return;
+    
+    overlay.classList.remove('is-open');
+    document.body.style.overflow = '';
+    
+    setTimeout(() => {
+      if (!overlay.classList.contains('is-open')) {
+        overlay.style.display = 'none';
+      }
+    }, 400);
+  }
+
+  // ============================================================
+  // ACTUALIZACIÓN DEL MODAL
+  // ============================================================
+
+  function updateStatsModal(): void {
+    try {
+      const counts = getStatusCounts();
+      const total = parseInt(document.getElementById('sidebar-total')?.textContent || '11') || 11;
+      const fm = parseInt(document.getElementById('sidebar-fm')?.textContent || '7') || 7;
+      const am = parseInt(document.getElementById('sidebar-am')?.textContent || '4') || 4;
+      
+      const availabilityEl = document.getElementById('stat-availability');
+      let availability = 64;
+      if (availabilityEl) {
+        availability = parseFloat(availabilityEl.textContent?.replace('%', '') || '64') || 64;
+      }
+      
+      const elements = {
+        availability: document.getElementById('stats-availability'),
+        availabilityBar: document.getElementById('stats-availability-bar'),
+        fm: document.getElementById('stats-fm'),
+        am: document.getElementById('stats-am'),
+        ok: document.getElementById('stats-ok'),
+        warn: document.getElementById('stats-warn'),
+        crit: document.getElementById('stats-crit'),
+        total: document.getElementById('stats-total'),
+        lastUpdate: document.getElementById('stats-last-update')
+      };
+      
+      if (elements.availability) {
+        elements.availability.textContent = availability + '%';
+      }
+      
+      if (elements.availabilityBar) {
+        elements.availabilityBar.style.width = availability + '%';
+      }
+      
+      if (elements.fm) elements.fm.textContent = String(fm);
+      if (elements.am) elements.am.textContent = String(am);
+      if (elements.ok) elements.ok.textContent = String(counts.ok);
+      if (elements.warn) elements.warn.textContent = String(counts.warn);
+      if (elements.crit) elements.crit.textContent = String(counts.crit);
+      if (elements.total) elements.total.textContent = String(total);
+      
+      const lastUpdate = document.getElementById('stat-last-update');
+      if (lastUpdate && elements.lastUpdate) {
+        elements.lastUpdate.textContent = lastUpdate.textContent || '--:--:--';
+      }
+    } catch {}
+  }
+
+  // ============================================================
   // INICIALIZACIÓN DE GRÁFICAS
   // ============================================================
 
@@ -204,14 +286,12 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
       const echarts = await import('echarts');
       (window as any)._echartsLib = echarts;
 
-      // Gauge Custom
       const gaugeDom = document.getElementById('gauge-chart');
       if (gaugeDom) {
         window._gaugeChart = echarts.init(gaugeDom, null, { renderer: 'svg' });
         updateGaugeChart();
       }
 
-      // Pie Estado
       const statusDom = document.getElementById('pie-status');
       if (statusDom) {
         const statusChart = echarts.init(statusDom, null, { renderer: 'svg' });
@@ -226,13 +306,11 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
         window._statusPie?.resize();
       });
 
-    } catch (error) {
-      console.error('❌ Error en sidebar charts:', error);
-    }
+    } catch {}
   }
 
   // ============================================================
-  // CUSTOM GAUGE (como el ejemplo que me enviaste)
+  // CUSTOM GAUGE
   // ============================================================
 
   function updateGaugeChart(): void {
@@ -248,12 +326,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     renderGaugeArc(chart, availability);
   }
 
-  // ============================================================
-  // MOTOR COMPARTIDO DEL ANILLO DE DISPONIBILIDAD
-  // (diseño tipo anillo simple, sin aguja)
-  // ============================================================
-
-  // Define color base, gradiente (dos tonos) y etiqueta de estado según el umbral.
   function getGaugeStatus(availability: number): { color: string; from: string; to: string; label: string } {
     if (availability < 50) {
       return { color: '#ef4444', from: '#dc2626', to: '#f87171', label: 'Crítico' };
@@ -278,8 +350,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
       const r0 = r * 0.72;
       const thickness = r - r0;
 
-      // Gradiente de dos tonos en la dirección del arco; si por alguna razón
-      // la librería aún no está disponible, cae de vuelta al color sólido.
       const progressFill = echartsLib
         ? new echartsLib.graphic.LinearGradient(0, 0, 1, 1, [
             { offset: 0, color: status.from },
@@ -290,13 +360,11 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
       return {
         type: 'group',
         children: [
-          // Track de fondo
           {
             type: 'sector',
             shape: { cx, cy, r, r0, startAngle: 0, endAngle: -Math.PI * 2 },
             style: { fill: 'var(--panel-line, #e5e7eb)', opacity: 0.45 }
           },
-          // Arco de progreso con gradiente, extremos redondeados y glow
           {
             type: 'sector',
             shape: {
@@ -314,7 +382,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
               shadowOffsetY: 2
             }
           },
-          // Porcentaje central
           {
             type: 'text',
             extra: { valOnRadian, transition: 'valOnRadian', enterFrom: { valOnRadian: 0 } },
@@ -357,8 +424,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     const total = ok + warn + crit;
     updateStatusValues(ok, warn, crit);
 
-    // Si no hay datos aún (los 3 en cero), mostramos un anillo vacío/neutro
-    // en lugar de forzar valores falsos en cada categoría.
     const isEmpty = total === 0;
 
     chart.setOption({
@@ -395,62 +460,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   }
 
   // ============================================================
-  // VENTANA FLOTANTE DE ESTADÍSTICAS
-  // ============================================================
-
-  function openStatsModal(): void {
-    const overlay = document.getElementById('stats-overlay');
-    if (!overlay) return;
-    updateStatsModal();
-    overlay.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeStatsModal(): void {
-    const overlay = document.getElementById('stats-overlay');
-    if (!overlay) return;
-    overlay.style.display = 'none';
-    document.body.style.overflow = '';
-  }
-
-  function updateStatsModal(): void {
-    const counts = getStatusCounts();
-    const total = parseInt(document.getElementById('sidebar-total')?.textContent || '11') || 11;
-    const fm = parseInt(document.getElementById('sidebar-fm')?.textContent || '7') || 7;
-    const am = parseInt(document.getElementById('sidebar-am')?.textContent || '4') || 4;
-    
-    const availabilityEl = document.getElementById('stat-availability');
-    let availability = 64;
-    if (availabilityEl) {
-      availability = parseFloat(availabilityEl.textContent?.replace('%', '') || '64') || 64;
-    }
-    
-    const statsAvailability = document.getElementById('stats-availability');
-    const statsAvailabilityBar = document.getElementById('stats-availability-bar');
-    const statsFm = document.getElementById('stats-fm');
-    const statsAm = document.getElementById('stats-am');
-    const statsOk = document.getElementById('stats-ok');
-    const statsWarn = document.getElementById('stats-warn');
-    const statsCrit = document.getElementById('stats-crit');
-    const statsTotal = document.getElementById('stats-total');
-    const statsLastUpdate = document.getElementById('stats-last-update');
-    
-    if (statsAvailability) statsAvailability.textContent = availability + '%';
-    if (statsAvailabilityBar) statsAvailabilityBar.style.width = availability + '%';
-    if (statsFm) statsFm.textContent = String(fm);
-    if (statsAm) statsAm.textContent = String(am);
-    if (statsOk) statsOk.textContent = String(counts.ok);
-    if (statsWarn) statsWarn.textContent = String(counts.warn);
-    if (statsCrit) statsCrit.textContent = String(counts.crit);
-    if (statsTotal) statsTotal.textContent = String(total);
-    
-    const lastUpdate = document.getElementById('stat-last-update');
-    if (lastUpdate && statsLastUpdate) {
-      statsLastUpdate.textContent = lastUpdate.textContent || '--:--:--';
-    }
-  }
-
-  // ============================================================
   // ACTUALIZACIÓN PRINCIPAL
   // ============================================================
 
@@ -477,25 +486,39 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   window.closeStatsModal = closeStatsModal;
 
   // ============================================================
-  // EVENTOS
+  // CONFIGURACIÓN DE EVENTOS
   // ============================================================
 
   document.addEventListener('DOMContentLoaded', () => {
     const openBtn = document.getElementById('open-stats-btn');
-    if (openBtn) openBtn.addEventListener('click', openStatsModal);
+    if (openBtn) {
+      openBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openStatsModal();
+      });
+    }
     
     const closeBtn = document.getElementById('close-stats-btn');
-    if (closeBtn) closeBtn.addEventListener('click', closeStatsModal);
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeStatsModal();
+      });
+    }
     
     const overlay = document.getElementById('stats-overlay');
     if (overlay) {
       overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) closeStatsModal();
+        if (e.target === overlay) {
+          closeStatsModal();
+        }
       });
     }
     
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeStatsModal();
+      if (e.key === 'Escape') {
+        closeStatsModal();
+      }
     });
   });
 
@@ -543,3 +566,306 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     setupStrictSimetry();
   }
 </script>
+
+<style>
+  /* ============================================================
+     ESTILOS DEL MODAL (Integración con tu modal.css)
+     ============================================================ */
+  
+  #stats-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(9, 13, 11, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+  }
+
+  #stats-overlay.is-open {
+    display: flex !important;
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+  }
+
+  #stats-overlay .stats-modal {
+    background: var(--panel, #ffffff);
+    border: 1px solid var(--panel-line, #e5e7eb);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 620px;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 24px 28px 28px;
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.02);
+    transform: scale(0.92) translateY(10px);
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  #stats-overlay.is-open .stats-modal {
+    transform: scale(1) translateY(0);
+  }
+
+  #stats-overlay .stats-modal::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  #stats-overlay .stats-modal::-webkit-scrollbar-thumb {
+    background: var(--panel-line, #e5e7eb);
+    border-radius: 4px;
+  }
+
+  #stats-overlay .stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+
+  #stats-overlay .stats-title {
+    margin: 0;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #stats-overlay .stats-close {
+    background: none;
+    border: 1px solid var(--panel-line, #e5e7eb);
+    color: var(--text-dim, #6b7280);
+    border-radius: 5px;
+    height: 28px;
+    width: 28px;
+    cursor: pointer;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 14px;
+  }
+
+  #stats-overlay .stats-close:hover {
+    color: #ffffff !important;
+    background: #ef4444 !important;
+    border-color: #ef4444 !important;
+    transform: rotate(90deg);
+  }
+
+  #stats-overlay .stats-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  #stats-overlay .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  #stats-overlay .stats-item {
+    background: var(--surface-2, #f3f4f6);
+    border: 1px solid var(--panel-line, #e5e7eb);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  #stats-overlay .stats-item-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-dim, #6b7280);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  #stats-overlay .stats-item-value {
+    font-size: 24px;
+    font-weight: 700;
+    font-family: var(--mono, monospace);
+    margin-bottom: 6px;
+  }
+
+  #stats-overlay .stats-item-bar {
+    height: 4px;
+    background: var(--panel-line, #e5e7eb);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  #stats-overlay .stats-item-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--phosphor, #3b82f6), var(--phosphor-dim, #60a5fa));
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  #stats-overlay .stats-band {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  #stats-overlay .stats-band-item {
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #stats-overlay .stats-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  #stats-overlay .stats-dot.fm {
+    background: #3b82f6;
+  }
+
+  #stats-overlay .stats-dot.am {
+    background: #8b5cf6;
+  }
+
+  #stats-overlay .stats-status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+  }
+
+  #stats-overlay .stats-status-item {
+    padding: 8px 10px;
+    border-radius: 6px;
+    text-align: center;
+  }
+
+  #stats-overlay .stats-status-item.ok-bg {
+    background: rgba(34, 197, 94, 0.1);
+  }
+
+  #stats-overlay .stats-status-item.warn-bg {
+    background: rgba(234, 179, 8, 0.1);
+  }
+
+  #stats-overlay .stats-status-item.crit-bg {
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  #stats-overlay .stats-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 4px;
+  }
+
+  #stats-overlay .stats-status-dot.ok-dot {
+    background: #22c55e;
+  }
+
+  #stats-overlay .stats-status-dot.warn-dot {
+    background: #eab308;
+  }
+
+  #stats-overlay .stats-status-dot.crit-dot {
+    background: #ef4444;
+  }
+
+  #stats-overlay .stats-status-label {
+    font-size: 11px;
+    color: var(--text-dim, #6b7280);
+  }
+
+  #stats-overlay .stats-status-value {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: var(--mono, monospace);
+    margin-top: 2px;
+  }
+
+  #stats-overlay .stats-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #stats-overlay .stats-summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  #stats-overlay .stats-summary-item span {
+    color: var(--text-dim, #6b7280);
+  }
+
+  #stats-overlay .stats-summary-item strong {
+    font-family: var(--mono, monospace);
+    font-weight: 600;
+  }
+  
+  .stats-btn {
+    background: var(--surface-2, #f3f4f6);
+    border: 1px solid var(--panel-line, #e5e7eb);
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: var(--text-dim, #6b7280);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .stats-btn:hover {
+    background: var(--phosphor, #3b82f6);
+    color: white;
+    border-color: var(--phosphor, #3b82f6);
+  }
+
+  .stats-btn:active {
+    transform: scale(0.95);
+  }
+  
+  @media (max-width: 640px) {
+    #stats-overlay .stats-row {
+      grid-template-columns: 1fr;
+    }
+    
+    #stats-overlay .stats-status-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    #stats-overlay .stats-modal {
+      padding: 16px 20px 20px;
+      max-height: 95vh;
+    }
+    
+    #stats-overlay .stats-title {
+      font-size: 17px;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    #stats-overlay .stats-modal {
+      background: var(--panel, #1f2937);
+    }
+    
+    #stats-overlay .stats-item {
+      background: var(--surface-2, #374151);
+    }
+  }
+</style>
