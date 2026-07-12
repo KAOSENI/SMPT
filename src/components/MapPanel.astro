@@ -1,0 +1,86 @@
+---
+// El contorno de Chiapas se importa como dato y se inyecta aquí en tiempo de
+// build (Astro renderiza esto a HTML estático) — no hace falta mandarlo como
+// JS al navegador. Todo lo interactivo (zoom, puntos, capas) lo llenan
+// map.js / map-interaction.js en tiempo de ejecución sobre estos <g> vacíos.
+import { CHIAPAS_PATH } from '../scripts/data/chiapas-path.js';
+---
+
+<!-- CONTENEDOR RELATIVO PARA MAPA + MENÚ EXTERNO -->
+<div style="position: relative; width: 100%; aspect-ratio: 1/1;">
+
+  <!-- MAPA -->
+  <div id="geo-map">
+    <div class="map-tooltip" id="map-tooltip">
+      <div class="tt-name" id="tt-name">—</div>
+      <div class="tt-detail" id="tt-detail">—</div>
+      <div class="tt-status" id="tt-status">—</div>
+    </div>
+
+    <div class="map-controls-overlay">
+      <button class="map-options-btn" id="map-options-btn" aria-label="Opciones del mapa">⚙</button>
+      <button id="map-zoom-in" aria-label="Acercar">+</button>
+      <button id="map-zoom-out" aria-label="Alejar">−</button>
+      <button id="map-zoom-reset" aria-label="Restablecer" style="font-size:10px;">⟲</button>
+    </div>
+
+    <div class="map-legend">
+      <div class="legend-item"><span class="legend-dot ok"></span> Normal</div>
+      <div class="legend-item"><span class="legend-dot warn"></span> Advertencia</div>
+      <div class="legend-item"><span class="legend-dot crit"></span> Crítico</div>
+    </div>
+
+    <svg id="geo-svg" viewBox="0 0 480 480" style="width:100%; height:100%; display:block; cursor:grab;">
+      <defs>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <radialGradient id="heat-grad">
+          <stop offset="0%" stop-color="var(--red)" stop-opacity="0.4"/>
+          <stop offset="50%" stop-color="var(--amber)" stop-opacity="0.2"/>
+          <stop offset="100%" stop-color="var(--phosphor)" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <g id="map-zoom-group">
+        <path
+          d={CHIAPAS_PATH}
+          fill="var(--map-land)"
+          stroke="var(--phosphor-dim)"
+          stroke-width="1.2"
+          vector-effect="non-scaling-stroke"
+        />
+        <g id="layer-heatmap" style="display:none;"></g>
+        <g id="layer-coverage" style="display:none;"></g>
+        <g id="layer-clusters" style="display:none;"></g>
+        <g id="layer-points"></g>
+      </g>
+    </svg>
+  </div>
+
+  <!-- MENÚ DE OPCIONES - FUERA DEL MAPA -->
+  <div class="map-options-menu" id="map-options-menu">
+    <div class="menu-section-title">Capas del mapa</div>
+    <button class="menu-item active" data-option="coverage">
+      <span>Cobertura</span>
+      <span class="toggle-indicator">✓</span>
+    </button>
+    <button class="menu-item" data-option="heatmap">
+      <span>Mapa de calor</span>
+      <span class="toggle-indicator">✓</span>
+    </button>
+    <button class="menu-item active" data-option="labels">
+      <span>Etiquetas</span>
+      <span class="toggle-indicator">✓</span>
+    </button>
+    <div class="menu-divider"></div>
+    <button class="menu-item" data-option="clusters">
+      <span>Agrupar (clusters)</span>
+      <span class="toggle-indicator">✓</span>
+    </button>
+  </div>
+
+</div>

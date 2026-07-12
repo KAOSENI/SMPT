@@ -1,0 +1,447 @@
+---
+// src/components/Header.astro
+// Header sin contadores visibles, pero con IDs ocultos para compatibilidad
+// Mantiene: marca, título, selector de temas, reloj y badge "Sistema Chiapaneco"
+
+import { Sun, Moon, Lamp, Clock } from '@lucide/astro';
+
+// El proyecto se despliega bajo una subruta (base: '/SMPT' en astro.config.mjs),
+// así que los assets de /public deben resolverse con BASE_URL, no con "/" a secas.
+const base = import.meta.env.BASE_URL;
+---
+
+<header class="app-header">
+  <div class="header-left">
+    <div class="brand">
+      <div class="brand-marks">
+        <div class="brand-mark crest-badge" title="Gobierno del Estado de Chiapas">
+          <img src={`${base}escudo-chiapas.png`} alt="Escudo del Estado de Chiapas" />
+        </div>
+        <div class="brand-mark org-logo">
+          <img
+            src={`${base}logo-schrtyc.png`}
+            alt="Sistema Chiapaneco de Radio, Televisión y Cinematografía"
+          />
+        </div>
+      </div>
+      <div class="brand-text">
+        <span class="brand-badge">SCRTyC</span>
+        <h1 class="brand-title">Red de Transmisores</h1>
+        <span class="brand-sub">Sistema Chiapaneco de Radio, Televisión y Cinematografía</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <!-- Reloj en vivo -->
+    <div class="live-clock">
+      <Clock size={14} stroke-width={2} />
+      <span class="clock-time" id="live-clock">--:--:--</span>
+      <span class="clock-label">en vivo</span>
+      <span class="live-dot"></span>
+    </div>
+
+    <!-- Selector de temas -->
+    <div class="theme-switch-group">
+      <span class="theme-switch-label">Tema</span>
+      <div class="theme-switch" role="group" aria-label="Tema visual">
+        <button class="theme-btn" data-theme-btn="light" aria-pressed="true" title="Claro">
+          <Sun size={16} stroke-width={2} />
+        </button>
+        <button class="theme-btn" data-theme-btn="phosphor" aria-pressed="false" title="Fósforo">
+          <Lamp size={16} stroke-width={2} />
+        </button>
+        <button class="theme-btn" data-theme-btn="dark" aria-pressed="false" title="Oscuro">
+          <Moon size={16} stroke-width={2} />
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⚠️ NO ELIMINAR: Elementos ocultos para compatibilidad con grid.js -->
+  <div style="display:none;" aria-hidden="true">
+    <span id="count-ok">0</span>
+    <span id="count-warn">0</span>
+    <span id="count-crit">0</span>
+  </div>
+</header>
+
+<style>
+  .app-header {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.65rem 1.5rem;
+    background: var(--panel, #ffffff);
+    border-bottom: 1px solid var(--panel-line, #dde3e0);
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  /* Acento inferior con los colores del logo institucional */
+  .app-header::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 3px;
+    background: linear-gradient(90deg, #b41929, #c72862, #009688);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .brand-marks {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  /* Tamaño y forma compartidos por ambos logos del header */
+  .brand-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border: 1px solid var(--panel-line, #dde3e0);
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+
+  .brand-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .brand-mark:hover {
+    transform: scale(1.05);
+  }
+
+  /* Escudo de Chiapas: chip oscuro fijo (el escudo es blanco) para que
+     se vea igual en los 3 temas, sin depender del fondo del panel. */
+  .crest-badge {
+    padding: 9px;
+    background: linear-gradient(145deg, #26302c, #171d1a);
+  }
+
+  /* Logo del SCRTyC: ya trae sus propios colores, funciona sobre panel claro */
+  .org-logo {
+    padding: 5px;
+    background: var(--surface-2, #eef1f0);
+  }
+
+  .org-logo:hover {
+    border-color: var(--text-dim, #667169);
+  }
+
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  .brand-badge {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: var(--text-dim, #667169);
+    background: var(--surface-2, #eef1f0);
+    padding: 0.15rem 0.6rem;
+    border-radius: 4px;
+    letter-spacing: 0.8px;
+    font-family: var(--mono, monospace);
+    border: 1px solid var(--panel-line, #dde3e0);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .brand-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text, #121815);
+    margin: 0;
+    font-family: var(--sans, 'Segoe UI', sans-serif);
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+  }
+
+  .brand-sub {
+    font-size: 0.7rem;
+    color: var(--text-dim, #667169);
+    font-weight: 400;
+    font-family: var(--sans, 'Segoe UI', sans-serif);
+    line-height: 1.3;
+    max-width: 30ch;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  /* Reloj en vivo */
+  .live-clock {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 34px;
+    padding: 0 0.8rem 0 0.6rem;
+    background: var(--surface-2, #eef1f0);
+    border-radius: 20px;
+    border: 1px solid var(--panel-line, #dde3e0);
+    font-family: var(--mono, monospace);
+    font-size: 0.75rem;
+    color: var(--text-dim, #667169);
+    box-sizing: border-box;
+  }
+
+  .live-clock :global(svg) {
+    color: var(--text-dim, #667169);
+    stroke: currentColor;
+  }
+
+  .clock-time {
+    font-weight: 600;
+    color: var(--text, #121815);
+    font-variant-numeric: tabular-nums;
+    min-width: 4.5rem;
+  }
+
+  .clock-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim, #667169);
+  }
+
+  .live-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: pulse-dot 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.8); }
+  }
+
+  /* Theme switch */
+  .theme-switch-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .theme-switch-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim, #667169);
+    white-space: nowrap;
+  }
+
+  .theme-switch {
+    display: flex;
+    gap: 2px;
+    background: var(--surface-2, #eef1f0);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid var(--panel-line, #dde3e0);
+  }
+
+  .theme-btn {
+    background: transparent;
+    border: none;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-dim, #667169);
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .theme-btn :global(svg) {
+    stroke: currentColor;
+  }
+
+  .theme-btn[aria-pressed="true"] {
+    background: var(--panel, #ffffff);
+    color: var(--text, #121815);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .theme-btn:hover:not([aria-pressed="true"]) {
+    color: var(--text, #121815);
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .app-header {
+      padding: 0.5rem 1rem;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+    }
+
+    .header-left {
+      justify-content: space-between;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+    }
+
+    .crest-badge {
+      padding: 7px;
+    }
+
+    .org-logo {
+      padding: 4px;
+    }
+
+    .brand-title {
+      font-size: 1rem;
+    }
+
+    .brand-sub {
+      display: none;
+    }
+
+    .brand-badge {
+      font-size: 0.5rem;
+      padding: 0.1rem 0.4rem;
+    }
+
+    .header-right {
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .live-clock {
+      font-size: 0.65rem;
+      padding: 0.2rem 0.6rem 0.2rem 0.4rem;
+    }
+
+    .clock-time {
+      min-width: 3.5rem;
+      font-size: 0.7rem;
+    }
+
+    .clock-label {
+      display: none;
+    }
+
+    .theme-switch-label {
+      display: none;
+    }
+
+    .theme-btn {
+      padding: 0.2rem 0.4rem;
+    }
+
+    .theme-btn :global(svg) {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+    }
+
+    .crest-badge {
+      padding: 6px;
+    }
+
+    .org-logo {
+      padding: 3px;
+    }
+
+    .brand-marks {
+      gap: 0.3rem;
+    }
+
+    .brand-title {
+      font-size: 0.85rem;
+    }
+
+    .brand-badge {
+      font-size: 0.45rem;
+      letter-spacing: 0.4px;
+    }
+
+    .live-clock {
+      font-size: 0.55rem;
+      padding: 0.15rem 0.4rem;
+      gap: 0.25rem;
+    }
+
+    .clock-time {
+      min-width: 2.8rem;
+      font-size: 0.6rem;
+    }
+
+    .live-dot {
+      width: 4px;
+      height: 4px;
+    }
+
+    .theme-btn {
+      padding: 0.15rem 0.3rem;
+    }
+
+    .theme-btn :global(svg) {
+      width: 12px;
+      height: 12px;
+    }
+  }
+</style>
+
+<script>
+  // Reloj en tiempo real
+  function updateClock() {
+    const clock = document.getElementById('live-clock');
+    if (!clock) return;
+
+    const now = new Date();
+    const time = now.toLocaleTimeString('es-MX', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    clock.textContent = time;
+  }
+
+  // Actualizar cada segundo
+  updateClock();
+  setInterval(updateClock, 1000);
+</script>

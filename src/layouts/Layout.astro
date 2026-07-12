@@ -1,0 +1,31 @@
+---
+// Layout base: importa todas las hojas de estilo (Astro/Vite las agrupa en un
+// solo CSS al compilar) y arma el esqueleto <html>. Para tocar SOLO el look
+// visual de un apartado, edita el archivo correspondiente en src/styles/ —
+// no hace falta tocar este layout.
+import '../styles/theme.css';
+import '../styles/base.css';
+import '../styles/map.css';
+import '../styles/sidebar.css';
+import '../styles/cards.css';
+import '../styles/modal.css';
+import '../styles/footer.css';
+import '../styles/responsive.css';
+
+interface Props {
+  title?: string;
+}
+const { title = 'Red de Transmisores — Panel de Monitoreo' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+</head>
+<body>
+  <slot />
+</body>
+</html>

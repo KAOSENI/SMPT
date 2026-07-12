@@ -1,0 +1,61 @@
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at top, var(--bg-glow) 0%, var(--bg) 60%);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    transition:background 0.2s ease, color 0.2s ease;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background:repeating-linear-gradient(
+      to bottom, rgba(255,255,255,var(--scanline-opacity)) 0px, rgba(255,255,255,var(--scanline-opacity)) 1px,
+      transparent 1px, transparent 3px
+    );
+    pointer-events:none;
+    z-index:1000;
+  }
+
+  header{
+    padding:20px 32px 16px;
+    border-bottom:1px solid var(--panel-line);
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:12px;
+  }
+  .brand-eyebrow{
+    font-family:var(--mono); font-size:10px; letter-spacing:0.15em;
+    color:var(--phosphor-dim); text-transform:uppercase; margin:0 0 2px;
+  }
+  h1{
+    margin:0; font-size:22px; font-weight:600; letter-spacing:-0.01em;
+  }
+  .status-summary{
+    display:flex; gap:16px; font-family:var(--mono); font-size:12px;
+  }
+
+  .theme-switch{
+    display:flex; gap:2px; background:var(--surface-2); border:1px solid var(--panel-line);
+    border-radius:6px; padding:2px;
+  }
+  .theme-btn{
+    font-family:var(--sans); font-size:11px; color:var(--text-dim); background:transparent;
+    border:none; border-radius:4px; padding:4px 10px; cursor:pointer; transition:background 0.15s ease, color 0.15s ease;
+  }
+  .theme-btn:hover{ color:var(--text); }
+  .theme-btn[aria-pressed="true"]{ background:var(--panel); color:var(--text); box-shadow:0 0 0 1px var(--panel-line); }
+
+  .status-summary .num{ font-size:18px; font-weight:600; display:block; }
+  .stat-ok .num{ color:var(--phosphor); }
+  .stat-warn .num{ color:var(--amber); }
+  .stat-crit .num{ color:var(--red); }
+  .stat-label{ color:var(--text-dim); font-size:9px; letter-spacing:0.06em; text-transform:uppercase; }
+
+  main{ padding:20px 32px 40px; max-width:1320px; margin:0 auto; }
+

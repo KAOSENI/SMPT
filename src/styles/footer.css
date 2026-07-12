@@ -1,0 +1,5 @@
+  footer{
+    text-align:center; padding:16px; font-family:var(--mono); font-size:10px;
+    color:var(--panel-line); border-top:1px solid var(--panel-line);
+  }
+

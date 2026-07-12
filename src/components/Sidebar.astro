@@ -1,0 +1,545 @@
+---
+import { STATIONS } from '../scripts/data/stations.js';
+import { 
+  Gauge, 
+  Activity,
+  CircleCheck,
+  BarChart3
+} from '@lucide/astro';
+
+const total = STATIONS.length;
+const fmCount = STATIONS.filter(s => s.band === 'FM').length;
+const amCount = STATIONS.filter(s => s.band === 'AM').length;
+---
+
+<div class="sidebar">
+  <!-- ============================================ -->
+  <!-- 1. GAUGE + ESTADO (2 elementos en fila)     -->
+  <!-- ============================================ -->
+  <div class="sidebar-card double-card">
+    <div class="double-row">
+      <!-- Gauge Custom -->
+      <div class="double-item gauge-item">
+        <div class="card-header">
+          <div class="card-header-left">
+            <Activity size={16} stroke-width={2} class="card-icon" />
+            <span class="card-title">Disponibilidad</span>
+          </div>
+        </div>
+        <div class="gauge-wrapper">
+          <div id="gauge-chart" class="gauge-chart"></div>
+        </div>
+      </div>
+
+      <!-- Anillo Estado Transmisores -->
+      <div class="double-item pie-item">
+        <div class="card-header">
+          <div class="card-header-left">
+            <Activity size={16} stroke-width={2} class="card-icon" />
+            <span class="card-title">Estado</span>
+          </div>
+          <button class="stats-btn" id="open-stats-btn" title="Ver estadísticas detalladas">
+            <BarChart3 size={14} stroke-width={2} />
+          </button>
+        </div>
+        <div class="pie-wrapper">
+          <div id="pie-status" class="pie-chart"></div>
+          <div class="pie-legend">
+            <div class="pie-legend-item">
+              <span class="pie-dot ok-dot"></span>
+              <span class="pie-label">Operativos</span>
+              <span class="pie-value" id="sidebar-ok-value">0</span>
+            </div>
+            <div class="pie-legend-item">
+              <span class="pie-dot warn-dot"></span>
+              <span class="pie-label">Advertencia</span>
+              <span class="pie-value" id="sidebar-warn-value">0</span>
+            </div>
+            <div class="pie-legend-item">
+              <span class="pie-dot crit-dot"></span>
+              <span class="pie-label">Críticos</span>
+              <span class="pie-value" id="sidebar-crit-value">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 2. ACTIVIDAD RECIENTE                       -->
+  <!-- ============================================ -->
+  <div class="sidebar-card events-card">
+    <div class="card-header">
+      <div class="card-header-left">
+        <CircleCheck size={16} stroke-width={2} class="card-icon" />
+        <span class="card-title">Actividad reciente</span>
+      </div>
+      <span class="card-badge" id="sidebar-event-count">0 eventos</span>
+    </div>
+    <div class="sidebar-events" id="sidebar-events">
+      <div class="events-empty">Esperando eventos...</div>
+    </div>
+    <span id="sidebar-last" style="display:none;">—</span>
+  </div>
+
+  <div style="display:none;" aria-hidden="true">
+    <span id="sidebar-total">{total}</span>
+    <span id="sidebar-fm">{fmCount}</span>
+    <span id="sidebar-am">{amCount}</span>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- 3. VENTANA FLOTANTE DE ESTADÍSTICAS         -->
+<!-- ============================================ -->
+<div id="stats-overlay" class="stats-overlay" style="display:none;">
+  <div class="stats-modal">
+    <div class="stats-header">
+      <h2 class="stats-title">
+        <BarChart3 size={20} stroke-width={2} />
+        Estadísticas detalladas
+      </h2>
+      <button class="stats-close" id="close-stats-btn">✕</button>
+    </div>
+    <div class="stats-body">
+      <div class="stats-row">
+        <div class="stats-item">
+          <div class="stats-item-label">Disponibilidad</div>
+          <div class="stats-item-value" id="stats-availability">64%</div>
+          <div class="stats-item-bar">
+            <div class="stats-item-bar-fill" id="stats-availability-bar" style="width: 64%;"></div>
+          </div>
+        </div>
+        <div class="stats-item">
+          <div class="stats-item-label">Distribución por banda</div>
+          <div class="stats-band">
+            <span class="stats-band-item">
+              <span class="stats-dot fm"></span> FM: <strong id="stats-fm">7</strong>
+            </span>
+            <span class="stats-band-item">
+              <span class="stats-dot am"></span> AM: <strong id="stats-am">4</strong>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stats-item">
+          <div class="stats-item-label">Estado de transmisores</div>
+          <div class="stats-status-grid">
+            <div class="stats-status-item ok-bg">
+              <span class="stats-status-dot ok-dot"></span>
+              <span class="stats-status-label">Operativos</span>
+              <span class="stats-status-value" id="stats-ok">0</span>
+            </div>
+            <div class="stats-status-item warn-bg">
+              <span class="stats-status-dot warn-dot"></span>
+              <span class="stats-status-label">Advertencia</span>
+              <span class="stats-status-value" id="stats-warn">0</span>
+            </div>
+            <div class="stats-status-item crit-bg">
+              <span class="stats-status-dot crit-dot"></span>
+              <span class="stats-status-label">Críticos</span>
+              <span class="stats-status-value" id="stats-crit">0</span>
+            </div>
+          </div>
+        </div>
+        <div class="stats-item">
+          <div class="stats-item-label">Resumen</div>
+          <div class="stats-summary">
+            <div class="stats-summary-item">
+              <span>Total transmisores</span>
+              <strong id="stats-total">11</strong>
+            </div>
+            <div class="stats-summary-item">
+              <span>Última actualización</span>
+              <strong id="stats-last-update">--:--:--</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  // FUNCIONES DE ESTADO
+  // ============================================================
+  
+  function getStatusCounts(): { ok: number; warn: number; crit: number } {
+    try {
+      if (window.__APP_STATE__) {
+        const state = window.__APP_STATE__;
+        const ok = state.filter((tx: any) => tx.status === 'ok').length;
+        const warn = state.filter((tx: any) => tx.status === 'warn').length;
+        const crit = state.filter((tx: any) => tx.status === 'crit').length;
+        return { ok, warn, crit };
+      }
+      const ok = parseInt(document.getElementById('sidebar-ok-value')?.textContent || '0') || 0;
+      const warn = parseInt(document.getElementById('sidebar-warn-value')?.textContent || '0') || 0;
+      const crit = parseInt(document.getElementById('sidebar-crit-value')?.textContent || '0') || 0;
+      return { ok, warn, crit };
+    } catch {
+      return { ok: 0, warn: 0, crit: 0 };
+    }
+  }
+
+  function updateStatusValues(ok: number, warn: number, crit: number): void {
+    const okEl = document.getElementById('sidebar-ok-value');
+    const warnEl = document.getElementById('sidebar-warn-value');
+    const critEl = document.getElementById('sidebar-crit-value');
+    if (okEl) okEl.textContent = String(ok);
+    if (warnEl) warnEl.textContent = String(warn);
+    if (critEl) critEl.textContent = String(crit);
+  }
+
+  // ============================================================
+  // INICIALIZACIÓN DE GRÁFICAS
+  // ============================================================
+
+  async function initSidebarCharts(): Promise<void> {
+    try {
+      const echarts = await import('echarts');
+      (window as any)._echartsLib = echarts;
+
+      // Gauge Custom
+      const gaugeDom = document.getElementById('gauge-chart');
+      if (gaugeDom) {
+        window._gaugeChart = echarts.init(gaugeDom, null, { renderer: 'svg' });
+        updateGaugeChart();
+      }
+
+      // Pie Estado
+      const statusDom = document.getElementById('pie-status');
+      if (statusDom) {
+        const statusChart = echarts.init(statusDom, null, { renderer: 'svg' });
+        window._statusPie = statusChart;
+        const counts = getStatusCounts();
+        updateStatusPie(counts.ok, counts.warn, counts.crit);
+        setTimeout(() => statusChart.resize(), 200);
+      }
+
+      window.addEventListener('resize', () => {
+        window._gaugeChart?.resize();
+        window._statusPie?.resize();
+      });
+
+    } catch (error) {
+      console.error('❌ Error en sidebar charts:', error);
+    }
+  }
+
+  // ============================================================
+  // CUSTOM GAUGE (como el ejemplo que me enviaste)
+  // ============================================================
+
+  function updateGaugeChart(): void {
+    const chart = window._gaugeChart;
+    if (!chart) return;
+
+    const availabilityEl = document.getElementById('stat-availability');
+    let availability = 64;
+    if (availabilityEl) {
+      availability = parseFloat(availabilityEl.textContent?.replace('%', '') || '64') || 64;
+    }
+
+    renderGaugeArc(chart, availability);
+  }
+
+  // ============================================================
+  // MOTOR COMPARTIDO DEL ANILLO DE DISPONIBILIDAD
+  // (diseño tipo anillo simple, sin aguja)
+  // ============================================================
+
+  // Define color base, gradiente (dos tonos) y etiqueta de estado según el umbral.
+  function getGaugeStatus(availability: number): { color: string; from: string; to: string; label: string } {
+    if (availability < 50) {
+      return { color: '#ef4444', from: '#dc2626', to: '#f87171', label: 'Crítico' };
+    }
+    if (availability < 75) {
+      return { color: '#eab308', from: '#ca8a04', to: '#fbbf24', label: 'Advertencia' };
+    }
+    return { color: '#22c55e', from: '#16a34a', to: '#4ade80', label: 'Óptimo' };
+  }
+
+  function renderGaugeArc(chart: any, availability: number): void {
+    const status = getGaugeStatus(availability);
+    const echartsLib = (window as any)._echartsLib;
+
+    const renderItem = (params: any, api: any) => {
+      const valOnRadian = api.value(1);
+      const coords = api.coord([api.value(0), valOnRadian]);
+      const polarEndRadian = coords[3];
+      const cx = params.coordSys.cx;
+      const cy = params.coordSys.cy;
+      const r = Math.min(cx, cy) * 0.85;
+      const r0 = r * 0.72;
+      const thickness = r - r0;
+
+      // Gradiente de dos tonos en la dirección del arco; si por alguna razón
+      // la librería aún no está disponible, cae de vuelta al color sólido.
+      const progressFill = echartsLib
+        ? new echartsLib.graphic.LinearGradient(0, 0, 1, 1, [
+            { offset: 0, color: status.from },
+            { offset: 1, color: status.to }
+          ])
+        : status.color;
+
+      return {
+        type: 'group',
+        children: [
+          // Track de fondo
+          {
+            type: 'sector',
+            shape: { cx, cy, r, r0, startAngle: 0, endAngle: -Math.PI * 2 },
+            style: { fill: 'var(--panel-line, #e5e7eb)', opacity: 0.45 }
+          },
+          // Arco de progreso con gradiente, extremos redondeados y glow
+          {
+            type: 'sector',
+            shape: {
+              cx, cy, r, r0,
+              startAngle: 0,
+              endAngle: -polarEndRadian,
+              cornerRadius: thickness / 2,
+              transition: 'endAngle',
+              enterFrom: { endAngle: 0 }
+            },
+            style: {
+              fill: progressFill,
+              shadowBlur: 18,
+              shadowColor: status.color + '55',
+              shadowOffsetY: 2
+            }
+          },
+          // Porcentaje central
+          {
+            type: 'text',
+            extra: { valOnRadian, transition: 'valOnRadian', enterFrom: { valOnRadian: 0 } },
+            style: {
+              text: `${Math.round(valOnRadian)}%`,
+              fontSize: 24,
+              fontWeight: 800,
+              fontFamily: 'var(--mono, monospace)',
+              x: cx,
+              y: cy,
+              fill: 'var(--text, #111827)',
+              align: 'center',
+              verticalAlign: 'middle'
+            },
+            during: (apiDuring: any) => apiDuring.setStyle('text', `${Math.round(apiDuring.getExtra('valOnRadian'))}%`)
+          }
+        ]
+      };
+    };
+
+    chart.setOption({
+      animationDuration: 900,
+      animationDurationUpdate: 900,
+      animationEasingUpdate: 'backOut',
+      dataset: { source: [[1, availability]] },
+      angleAxis: { type: 'value', startAngle: 0, show: false, min: 0, max: 100 },
+      radiusAxis: { type: 'value', show: false },
+      polar: { radius: '100%', center: ['50%', '50%'] },
+      series: [{ type: 'custom', coordinateSystem: 'polar', renderItem }]
+    });
+  }
+
+  // ============================================================
+  // PIE DE ESTADO
+  // ============================================================
+
+  function updateStatusPie(ok: number, warn: number, crit: number): void {
+    const chart = window._statusPie;
+    if (!chart) return;
+    const total = ok + warn + crit;
+    updateStatusValues(ok, warn, crit);
+
+    // Si no hay datos aún (los 3 en cero), mostramos un anillo vacío/neutro
+    // en lugar de forzar valores falsos en cada categoría.
+    const isEmpty = total === 0;
+
+    chart.setOption({
+      series: [{
+        type: 'pie',
+        radius: ['48%', '85%'],
+        center: ['50%', '50%'],
+        startAngle: 120,
+        avoidLabelOverlap: false,
+        itemStyle: { borderRadius: 4, borderColor: 'var(--panel, #ffffff)', borderWidth: 2 },
+        label: {
+          show: true,
+          position: 'center',
+          formatter: `{total|${isEmpty ? 0 : total}}`,
+          rich: { 
+            total: { 
+              fontSize: 26, 
+              fontWeight: '800', 
+              color: 'var(--text, #111827)', 
+              fontFamily: 'var(--mono, monospace)' 
+            } 
+          }
+        },
+        labelLine: { show: false },
+        data: isEmpty
+          ? [{ value: 1, name: 'Sin datos', itemStyle: { color: 'var(--panel-line, #e5e7eb)' } }]
+          : [
+              { value: ok, name: 'Operativos', itemStyle: { color: '#22c55e' } },
+              { value: warn, name: 'Advertencia', itemStyle: { color: '#eab308' } },
+              { value: crit, name: 'Críticos', itemStyle: { color: '#ef4444' } }
+            ]
+      }]
+    });
+  }
+
+  // ============================================================
+  // VENTANA FLOTANTE DE ESTADÍSTICAS
+  // ============================================================
+
+  function openStatsModal(): void {
+    const overlay = document.getElementById('stats-overlay');
+    if (!overlay) return;
+    updateStatsModal();
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeStatsModal(): void {
+    const overlay = document.getElementById('stats-overlay');
+    if (!overlay) return;
+    overlay.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function updateStatsModal(): void {
+    const counts = getStatusCounts();
+    const total = parseInt(document.getElementById('sidebar-total')?.textContent || '11') || 11;
+    const fm = parseInt(document.getElementById('sidebar-fm')?.textContent || '7') || 7;
+    const am = parseInt(document.getElementById('sidebar-am')?.textContent || '4') || 4;
+    
+    const availabilityEl = document.getElementById('stat-availability');
+    let availability = 64;
+    if (availabilityEl) {
+      availability = parseFloat(availabilityEl.textContent?.replace('%', '') || '64') || 64;
+    }
+    
+    const statsAvailability = document.getElementById('stats-availability');
+    const statsAvailabilityBar = document.getElementById('stats-availability-bar');
+    const statsFm = document.getElementById('stats-fm');
+    const statsAm = document.getElementById('stats-am');
+    const statsOk = document.getElementById('stats-ok');
+    const statsWarn = document.getElementById('stats-warn');
+    const statsCrit = document.getElementById('stats-crit');
+    const statsTotal = document.getElementById('stats-total');
+    const statsLastUpdate = document.getElementById('stats-last-update');
+    
+    if (statsAvailability) statsAvailability.textContent = availability + '%';
+    if (statsAvailabilityBar) statsAvailabilityBar.style.width = availability + '%';
+    if (statsFm) statsFm.textContent = String(fm);
+    if (statsAm) statsAm.textContent = String(am);
+    if (statsOk) statsOk.textContent = String(counts.ok);
+    if (statsWarn) statsWarn.textContent = String(counts.warn);
+    if (statsCrit) statsCrit.textContent = String(counts.crit);
+    if (statsTotal) statsTotal.textContent = String(total);
+    
+    const lastUpdate = document.getElementById('stat-last-update');
+    if (lastUpdate && statsLastUpdate) {
+      statsLastUpdate.textContent = lastUpdate.textContent || '--:--:--';
+    }
+  }
+
+  // ============================================================
+  // ACTUALIZACIÓN PRINCIPAL
+  // ============================================================
+
+  function updateBarsChart(): void {
+    const counts = getStatusCounts();
+    updateStatusPie(counts.ok, counts.warn, counts.crit);
+    updateGaugeChart();
+  }
+
+  function updateSidebarGauge(availability: number): void {
+    const chart = window._gaugeChart;
+    if (!chart) return;
+    renderGaugeArc(chart, availability);
+  }
+
+  // Exponer funciones globalmente
+  window.updateBarsChart = updateBarsChart;
+  window.updateStatusPie = updateStatusPie;
+  window.updateSidebarGauge = updateSidebarGauge;
+  window.__updateSidebarStatus = function(ok: number, warn: number, crit: number): void {
+    updateStatusPie(ok, warn, crit);
+  };
+  window.openStatsModal = openStatsModal;
+  window.closeStatsModal = closeStatsModal;
+
+  // ============================================================
+  // EVENTOS
+  // ============================================================
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const openBtn = document.getElementById('open-stats-btn');
+    if (openBtn) openBtn.addEventListener('click', openStatsModal);
+    
+    const closeBtn = document.getElementById('close-stats-btn');
+    if (closeBtn) closeBtn.addEventListener('click', closeStatsModal);
+    
+    const overlay = document.getElementById('stats-overlay');
+    if (overlay) {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeStatsModal();
+      });
+    }
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeStatsModal();
+    });
+  });
+
+  // ============================================================
+  // INICIALIZACIÓN
+  // ============================================================
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSidebarCharts);
+  } else {
+    initSidebarCharts();
+  }
+
+  // ============================================================
+  // SIMETRÍA CON EL MAPA
+  // ============================================================
+
+  function setupStrictSimetry(): void {
+    const mapContainer = document.getElementById('geo-map');
+    const sidebarEl = document.querySelector('.sidebar');
+    if (!mapContainer || !(sidebarEl instanceof HTMLElement)) return;
+
+    const layoutObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (window.innerWidth > 1024) {
+          const exactHeight = entry.contentRect.height;
+          sidebarEl.style.height = `${exactHeight}px`;
+          sidebarEl.style.maxHeight = `${exactHeight}px`;
+          requestAnimationFrame(() => {
+            window._gaugeChart?.resize();
+            window._statusPie?.resize();
+          });
+        } else {
+          sidebarEl.style.height = 'auto';
+          sidebarEl.style.maxHeight = 'none';
+        }
+      }
+    });
+    layoutObserver.observe(mapContainer);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupStrictSimetry);
+  } else {
+    setupStrictSimetry();
+  }
+</script>

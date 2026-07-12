@@ -1,0 +1,56 @@
+---
+// Panel lateral junto al mapa: resumen, bitácora de eventos e información
+// general. Los valores los llena events.js en tiempo real.
+---
+<div class="sidebar">
+  <!-- Resumen rápido -->
+  <div class="sidebar-card">
+    <div class="section-title">Resumen de la red</div>
+    <div class="sidebar-stats">
+      <div class="stat-item ok">
+        <span class="num" id="sidebar-ok">0</span>
+        <span class="label">Normal</span>
+      </div>
+      <div class="stat-item warn">
+        <span class="num" id="sidebar-warn">0</span>
+        <span class="label">Advertencia</span>
+      </div>
+      <div class="stat-item crit">
+        <span class="num" id="sidebar-crit">0</span>
+        <span class="label">Crítico</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Eventos recientes -->
+  <div class="sidebar-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <span class="section-title" style="margin:0;">Eventos recientes</span>
+      <span style="font-family:var(--mono); font-size:9px; color:var(--text-dim);" id="sidebar-event-count">0</span>
+    </div>
+    <div class="sidebar-events" id="sidebar-events">
+      <div style="text-align:center; color:var(--text-dim); font-family:var(--mono); font-size:10px; padding:16px 0;">
+        Esperando eventos...
+      </div>
+    </div>
+  </div>
+
+  <!-- Información extra -->
+  <div class="sidebar-card">
+    <div class="section-title">Información</div>
+    <div class="sidebar-info">
+      <div class="info-item">
+        <span class="label">Total transmisores</span>
+        <span class="value" id="sidebar-total">0</span>
+      </div>
+      <div class="info-item">
+        <span class="label">Último evento</span>
+        <span class="value" id="sidebar-last" style="font-size:11px;">—</span>
+      </div>
+      <div class="info-item" style="grid-column:1/-1;">
+        <span class="label">Actualización</span>
+        <span class="value" style="font-size:12px; font-weight:400; color:var(--text-dim);">Cada 1.5s</span>
+      </div>
+    </div>
+  </div>
+</div>

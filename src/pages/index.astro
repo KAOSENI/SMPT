@@ -1,0 +1,83 @@
+---
+// src/pages/index.astro
+// Página principal. Para reordenar secciones de la página, este es el
+// archivo a tocar — cada bloque es un componente independiente en src/components/.
+
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import DashboardStats from '../components/DashboardStats.astro';
+import MapPanel from '../components/MapPanel.astro';
+import Sidebar from '../components/Sidebar.astro';
+import TransmitterGrid from '../components/TransmitterGrid.astro';
+import DetailModal from '../components/DetailModal.astro';
+import SettingsModal from '../components/SettingsModal.astro';
+import Footer from '../components/Footer.astro';
+
+// Importar datos para estadísticas iniciales (SSR)
+import { state } from '../scripts/state.js';
+import { statusOf } from '../scripts/status.js';
+
+// Calcular métricas iniciales para SSR
+function getInitialMetrics() {
+  const total = state.length;
+  let operational = 0;
+  let warning = 0;
+  let critical = 0;
+
+  state.forEach((tx) => {
+    const status = statusOf(tx);
+    if (status === 'ok') operational++;
+    else if (status === 'warn') warning++;
+    else if (status === 'crit') critical++;
+  });
+
+  const weightedSum = (operational * 100) + (warning * 50);
+  const availability = total > 0 ? Math.round(weightedSum / total) : 0;
+
+  return { total, operational, warning, critical, availability };
+}
+
+const initialMetrics = getInitialMetrics();
+const lastUpdate = new Date().toLocaleTimeString('es-MX', {
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+});
+---
+
+<Layout>
+  <Header />
+
+  <main>
+    <!-- Dashboard de métricas globales -->
+    <DashboardStats 
+      client:load
+      total={initialMetrics.total}
+      operational={initialMetrics.operational}
+      warning={initialMetrics.warning}
+      critical={initialMetrics.critical}
+      availability={initialMetrics.availability}
+      lastUpdate={lastUpdate}
+    />
+
+    <div class="map-sidebar-layout">
+      <MapPanel />
+      <Sidebar />
+    </div>
+
+    <TransmitterGrid />
+  </main>
+
+  <Footer />
+
+  <DetailModal />
+  <SettingsModal />
+
+  <script>
+    // Astro compila esto como módulo ES y lo enlaza automáticamente al final
+    // del body. Toda la lógica interactiva vive en src/scripts/ — este import
+    // es la única línea que conecta la página con esa lógica.
+    import '../scripts/main.js';
+  </script>
+</Layout>

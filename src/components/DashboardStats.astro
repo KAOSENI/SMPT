@@ -1,0 +1,198 @@
+---
+// src/components/DashboardStats.astro
+// Panel de métricas globales del sistema (Ficha Técnica y KPIs)
+// Usa @lucide/astro para iconos
+
+import {
+  Radio,
+  Clock
+} from '@lucide/astro';
+
+export interface Props {
+  total: number;
+  lastUpdate: string;
+}
+
+const { total, lastUpdate } = Astro.props;
+---
+
+<div class="dashboard-stats" id="dashboard-stats">
+  <div class="stats-header">
+    <div>
+      <h3 class="stats-title">Resumen de la Red</h3>
+      <p class="system-description">
+        Entorno de monitoreo desarrollado con <strong>Astro</strong>, arquitectura modular de componentes y estilos reactivos basados en variables CSS nativas.
+      </p>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <!-- Tarjeta 1: Total Transmisores -->
+    <div class="stat-card">
+      <div class="stat-icon radio-icon">
+        <Radio size={20} stroke-width={2} />
+      </div>
+      <div class="stat-content">
+        <span class="stat-number" id="stat-total">{total}</span>
+        <span class="stat-label">Transmisores</span>
+      </div>
+    </div>
+
+    <!-- Tarjeta 2: Última Actualización -->
+    <div class="stat-card timestamp">
+      <div class="stat-icon clock-icon">
+        <Clock size={20} stroke-width={2} />
+      </div>
+      <div class="stat-content">
+        <span class="stat-number small" id="stat-lastupdate">{lastUpdate}</span>
+        <span class="stat-label">Última actualización</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+  .dashboard-stats {
+    background: var(--panel, #ffffff);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--panel-line, #dde3e0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .stats-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .stats-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text, #121815);
+    margin: 0 0 0.25rem 0;
+    letter-spacing: 0.3px;
+    font-family: var(--sans, 'Segoe UI', sans-serif);
+  }
+
+  .system-description {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--text-dim, #667169);
+    font-family: var(--sans, 'Segoe UI', sans-serif);
+    margin: 0;
+    max-width: 800px;
+  }
+
+  .system-description strong {
+    font-weight: 600;
+    color: var(--text, #121815);
+  }
+
+  .stats-grid {
+    display: grid;
+    /* Dos columnas perfectas y simétricas que abarcan todo el ancho */
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .stat-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 8px;
+    background: var(--surface-2, #eef1f0);
+    border: 1px solid var(--panel-line, #dde3e0);
+    transition: all 0.2s ease;
+    min-height: 64px;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--text-dim, #667169);
+  }
+
+  .stat-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--bg, #f4f6f5);
+    color: var(--text-dim, #667169);
+  }
+
+  .stat-icon :global(svg) {
+    stroke: currentColor;
+  }
+
+  .radio-icon { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
+  .clock-icon { background: rgba(100, 116, 139, 0.08); color: var(--text-dim, #667169); }
+
+  .stat-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .stat-number {
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text, #121815);
+    font-family: var(--mono, 'Courier New', monospace);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-number.small {
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim, #667169);
+    font-weight: 500;
+    font-family: var(--sans, 'Segoe UI', sans-serif);
+  }
+
+  .timestamp .stat-number { color: var(--text-dim, #667169); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .dashboard-stats {
+      padding: 1rem;
+    }
+    .stats-grid {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+    .stat-card {
+      padding: 0.5rem 0.7rem;
+      min-height: 56px;
+    }
+    .stat-number {
+      font-size: 1.1rem;
+    }
+    .stat-number.small {
+      font-size: 0.85rem;
+    }
+    .stat-icon {
+      width: 30px;
+      height: 30px;
+    }
+    .stats-title {
+      font-size: 0.9rem;
+    }
+    .system-description {
+      font-size: 0.75rem;
+    }
+  }
+</style>

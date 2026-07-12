@@ -1,0 +1,50 @@
+.
+├── astro.config.mjs
+├── estructura.txt
+├── LICENSE
+├── package.json
+├── package-lock.json
+├── README.md
+├── src
+│   ├── components
+│   │   ├── DashboardStats.astro
+│   │   ├── DetailModal.astro
+│   │   ├── Footer.astro
+│   │   ├── Header.astro
+│   │   ├── MapPanel.astro
+│   │   ├── SettingsModal.astro
+│   │   ├── Sidebar.astro
+│   │   └── TransmitterGrid.astro
+│   ├── layouts
+│   │   └── Layout.astro
+│   ├── pages
+│   │   └── index.astro
+│   ├── scripts
+│   │   ├── charts.js
+│   │   ├── controls.js
+│   │   ├── dashboard.js
+│   │   ├── data
+│   │   ├── detail.js
+│   │   ├── events.js
+│   │   ├── grid.js
+│   │   ├── main.js
+│   │   ├── map-interaction.js
+│   │   ├── map.js
+│   │   ├── settings.js
+│   │   ├── state.js
+│   │   ├── status.js
+│   │   ├── theme.js
+│   │   ├── tick.js
+│   │   └── utils.js
+│   └── styles
+│       ├── base.css
+│       ├── cards.css
+│       ├── footer.css
+│       ├── map.css
+│       ├── modal.css
+│       ├── responsive.css
+│       ├── sidebar.css
+│       └── theme.css
+└── tsconfig.json
+
+8 directories, 40 files
