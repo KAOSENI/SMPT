@@ -5,8 +5,9 @@
 
 import { Sun, Moon, Lamp, Clock } from '@lucide/astro';
 
-// El proyecto se despliega bajo una subruta (base: '/SMPT' en astro.config.mjs),
-// así que los assets de /public deben resolverse con BASE_URL, no con "/" a secas.
+// El proyecto se despliega bajo una subruta (base: '/SMPT/' en astro.config.mjs),
+// así que los assets de /public deben resolverse con BASE_URL.
+// CORREGIDO: La base ya incluye la barra final, y los nombres de las imágenes NO tienen prefijo "SMPT".
 const base = import.meta.env.BASE_URL;
 ---
 
@@ -15,6 +16,7 @@ const base = import.meta.env.BASE_URL;
     <div class="brand">
       <div class="brand-marks">
         <div class="brand-mark crest-badge" title="Gobierno del Estado de Chiapas">
+          <!-- ✅ CORREGIDO: base + nombre de archivo (sin prefijo "SMPT") -->
           <img src={`${base}escudo-chiapas.png`} alt="Escudo del Estado de Chiapas" />
         </div>
         <div class="brand-mark org-logo">
