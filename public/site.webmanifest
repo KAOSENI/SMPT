@@ -2,18 +2,22 @@
   "name": "Red de Transmisores — Panel de Monitoreo",
   "short_name": "SMPT",
   "description": "Panel de monitoreo en tiempo real de los 11 transmisores del Sistema Chiapaneco de Radio, Televisión y Cinematografía",
+  "id": "/SMPT/",
+  "start_url": "/SMPT/",
+  "scope": "/SMPT/",
+  "lang": "es-MX",
   "icons": [
     {
       "src": "/SMPT/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "/SMPT/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
   "theme_color": "#0a6e4b",

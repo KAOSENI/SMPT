@@ -53,6 +53,14 @@ const ogImage = Astro.site ? new URL(`${baseUrl}logo-schrtyc.png`, Astro.site).t
   <!-- Manifest para PWA / Chrome -->
   <link rel="manifest" href={`${baseUrl}site.webmanifest`} />
 
+  <!-- Color de la barra del navegador / splash screen al instalar -->
+  <meta name="theme-color" content="#0a6e4b" />
+
+  <!-- iOS: que abra como app de pantalla completa al instalarse desde Safari -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SMPT" />
+
   <!-- ===== META TAGS ===== -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content={title} />

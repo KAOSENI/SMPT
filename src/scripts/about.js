@@ -87,7 +87,7 @@ export function openAbout() {
           <p><strong>Diseño de un Sistema SCADA para el Monitoreo de Parámetros Eléctricos y de Radiofrecuencia orientado a la Confiabilidad Operativa de las Estaciones de Transmisión del Sistema Chiapaneco de Radio, Televisión y Cinematografía</strong></p>
           <p style="margin-top:12px;">Este panel de monitoreo supervisa los <strong>11 transmisores de radio</strong> del Sistema Chiapaneco de Radio, Televisión y Cinematografía, como parte del prototipo funcional del sistema SCADA diseñado para el monitoreo de parámetros eléctricos y de radiofrecuencia.</p>
           <div class="about-meta">
-            <span><strong>Versión:</strong> 1.0.0</span>
+            <span><strong>Versión:</strong> 0.7.1</span>
             <span><strong>Tecnologías:</strong> Astro, ECharts, Lucide</span>
             <span><strong>Repositorio:</strong> <a href="https://github.com/KAOSENI/SMPT" target="_blank">github.com/KAOSENI/SMPT</a></span>
             <span><strong>Producción:</strong> <a href="https://kaoseni.github.io/SMPT/" target="_blank">kaoseni.github.io/SMPT</a></span>

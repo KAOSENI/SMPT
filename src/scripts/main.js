@@ -15,6 +15,7 @@ import { closeSettings } from './settings.js';
 // Importar dashboard para inicialización
 import { initDashboard } from './dashboard.js';
 import { openAbout } from './about.js';
+import { registerServiceWorker } from './pwa.js';
 
 // El HTML generado por eventos.js (bitácora) y map.js (clusters) usa
 // onclick="openDetail(id)" como texto plano, así que necesita existir en window.
@@ -59,3 +60,5 @@ setInterval(() => {
   tick();
   renderGeoMap();
 }, 1500);
+
+registerServiceWorker();
