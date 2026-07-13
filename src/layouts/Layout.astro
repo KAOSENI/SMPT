@@ -14,8 +14,19 @@ import '../styles/responsive.css';
 
 interface Props {
   title?: string;
+  description?: string;
 }
-const { title = 'Red de Transmisores — Panel de Monitoreo' } = Astro.props;
+const {
+  title = 'Red de Transmisores — Panel de Monitoreo',
+  description = 'Panel de monitoreo en tiempo real de los 11 transmisores del Sistema Chiapaneco de Radio, Televisión y Cinematografía: potencia, ROE, temperatura, alimentación eléctrica y estado por transmisor.',
+} = Astro.props;
+
+// El sitio se publica bajo /SMPT (ver "base" en astro.config.mjs), así que
+// los assets de /public deben resolverse con BASE_URL (mismo criterio que
+// en Header.astro), o se rompen en producción aunque funcionen en local.
+const base = import.meta.env.BASE_URL;
+const siteUrl = Astro.site ? new URL(Astro.url.pathname, Astro.site).toString() : undefined;
+const ogImage = Astro.site ? new URL(`${base}logo-schrtyc.png`, Astro.site).toString() : `${base}logo-schrtyc.png`;
 ---
 
 <!DOCTYPE html>
@@ -24,6 +35,34 @@ const { title = 'Red de Transmisores — Panel de Monitoreo' } = Astro.props;
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title}</title>
+  <meta name="description" content={description} />
+
+  <link rel="icon" type="image/png" href={`${base}logo-schrtyc.png`} />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={ogImage} />
+  {siteUrl && <meta property="og:url" content={siteUrl} />}
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={ogImage} />
+
+  <script is:inline>
+    // Aplica el tema guardado ANTES de que el navegador pinte la página.
+    // Tiene que ser un script inline normal (is:inline), no un módulo: los
+    // módulos de Astro se difieren y corren después del primer render, que
+    // es justo lo que causa el flash de tema Claro seguido de un cambio de
+    // golpe. La llave debe coincidir con THEME_KEY en src/scripts/persist.js.
+    (function () {
+      try {
+        var theme = localStorage.getItem('smpt:theme:v1');
+        if (theme) document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <slot />

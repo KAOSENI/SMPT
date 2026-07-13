@@ -15,12 +15,15 @@ import { renderGeoMap } from './map.js';
 import { openDetail, openDetailId } from './detail.js';
 import { openSettings, settingsOpenId } from './settings.js';
 import { saveConfig } from './persist.js';
+import { showToast } from './toast.js';
+import { EQUIPMENT_LABELS } from './data/stations.js';
 
 export function toggleEquipmentInstalled(id, key) {
   state[id].equipment[key].installed = !state[id].equipment[key].installed;
   if (!state[id].equipment[key].installed) state[id].equipment[key].on = false;
   checkStatusChange(id);
   renderAll();
+  // Sin toast aquí para no interrumpir la edición
 }
 
 export function toggleEquipmentOn(id, key) {
@@ -81,17 +84,43 @@ export function checkStatusChange(txId) {
           'entró en estado crítico';
     }
     addEvent(txId, newStatus, msg);
+    
+    // Solo mostrar toast para cambios de estado críticos
+    // (esto ocurre fuera del modal de configuración normalmente)
+    if (newStatus === 'crit') {
+      showToast(`${tx.shortName} - ${msg}`, 'error');
+    } else if (newStatus === 'warn') {
+      showToast(`${tx.shortName} - ${msg}`, 'info');
+    }
   }
 }
 
 export function renderAll() {
-  // Guarda umbrales/fases/equipos en localStorage en cada cambio — así
-  // sobreviven a un refresh o a cerrar y volver a abrir el sitio. Los
-  // valores simulados en vivo (power/vswr/temp/historial) no se tocan.
   saveConfig(state);
   renderGrid();
   renderGeoMap();
   updateSidebarStats();
-  if (openDetailId !== null) openDetail(openDetailId);
-  if (settingsOpenId !== null) openSettings(settingsOpenId);
+  
+  // Actualizar detalle sin recargar el modal de configuración
+  if (openDetailId !== null) {
+    // Solo actualizar valores, no regenerar todo el HTML
+    import('./detail.js').then(({ updateDetailValues }) => {
+      if (typeof updateDetailValues === 'function') {
+        updateDetailValues(openDetailId);
+      } else {
+        // Fallback: reabrir detail
+        openDetail(openDetailId);
+      }
+    });
+  }
+  
+  // NO llamar a openSettings() aquí para evitar recargar el modal
+  // En su lugar, solo actualizar valores si está abierto
+  if (settingsOpenId !== null) {
+    import('./settings.js').then(({ updateSettingsValues }) => {
+      if (typeof updateSettingsValues === 'function') {
+        updateSettingsValues(settingsOpenId);
+      }
+    });
+  }
 }
