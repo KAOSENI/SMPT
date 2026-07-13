@@ -1,13 +1,12 @@
 ---
 // src/components/Header.astro
 // Header sin contadores visibles, pero con IDs ocultos para compatibilidad
-// Mantiene: marca, título, selector de temas, reloj y badge "Sistema Chiapaneco"
+// Mantiene: marca, título, selector de temas, reloj, badge "Sistema Chiapaneco" y botón Acerca de
 
-import { Sun, Moon, Lamp, Clock } from '@lucide/astro';
+import { Sun, Moon, Lamp, Clock, Info } from '@lucide/astro';
 
 // El proyecto se despliega bajo una subruta (base: '/SMPT/' en astro.config.mjs),
 // así que los assets de /public deben resolverse con BASE_URL.
-// CORREGIDO: La base ya incluye la barra final, y los nombres de las imágenes NO tienen prefijo "SMPT".
 const base = import.meta.env.BASE_URL;
 ---
 
@@ -16,7 +15,6 @@ const base = import.meta.env.BASE_URL;
     <div class="brand">
       <div class="brand-marks">
         <div class="brand-mark crest-badge" title="Gobierno del Estado de Chiapas">
-          <!-- ✅ CORREGIDO: base + nombre de archivo (sin prefijo "SMPT") -->
           <img src={`${base}/escudo-chiapas.png`} alt="Escudo del Estado de Chiapas" />
         </div>
         <div class="brand-mark org-logo">
@@ -43,20 +41,27 @@ const base = import.meta.env.BASE_URL;
       <span class="live-dot"></span>
     </div>
 
-    <!-- Selector de temas -->
-    <div class="theme-switch-group">
-      <span class="theme-switch-label">Tema</span>
-      <div class="theme-switch" role="group" aria-label="Tema visual">
-        <button class="theme-btn" data-theme-btn="light" aria-pressed="true" title="Claro">
-          <Sun size={16} stroke-width={2} />
-        </button>
-        <button class="theme-btn" data-theme-btn="phosphor" aria-pressed="false" title="Fósforo">
-          <Lamp size={16} stroke-width={2} />
-        </button>
-        <button class="theme-btn" data-theme-btn="dark" aria-pressed="false" title="Oscuro">
-          <Moon size={16} stroke-width={2} />
-        </button>
+    <!-- Selector de temas + Acerca de -->
+    <div class="header-actions">
+      <div class="theme-switch-group">
+        <span class="theme-switch-label">Tema</span>
+        <div class="theme-switch" role="group" aria-label="Tema visual">
+          <button class="theme-btn" data-theme-btn="light" aria-pressed="true" title="Claro">
+            <Sun size={16} stroke-width={2} />
+          </button>
+          <button class="theme-btn" data-theme-btn="phosphor" aria-pressed="false" title="Fósforo">
+            <Lamp size={16} stroke-width={2} />
+          </button>
+          <button class="theme-btn" data-theme-btn="dark" aria-pressed="false" title="Oscuro">
+            <Moon size={16} stroke-width={2} />
+          </button>
+        </div>
       </div>
+
+      <!-- Botón Acerca de -->
+      <button class="header-btn about-btn" id="about-btn" aria-label="Acerca de" title="Acerca de este sistema">
+        <Info size={18} stroke-width={2} />
+      </button>
     </div>
   </div>
 
@@ -199,6 +204,13 @@ const base = import.meta.env.BASE_URL;
     flex-wrap: wrap;
   }
 
+  /* Contenedor de acciones del header (tema + acerca de) */
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   /* Reloj en vivo */
   .live-clock {
     display: flex;
@@ -301,6 +313,37 @@ const base = import.meta.env.BASE_URL;
     background: rgba(0, 0, 0, 0.04);
   }
 
+  /* Botón Acerca de */
+  .about-btn {
+    background: transparent;
+    border: 1px solid var(--panel-line, #dde3e0);
+    border-radius: 8px;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+    color: var(--text-dim, #667169);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    width: 34px;
+  }
+
+  .about-btn :global(svg) {
+    stroke: currentColor;
+  }
+
+  .about-btn:hover {
+    color: var(--text, #121815);
+    background: var(--surface-2, #eef1f0);
+    border-color: var(--text-dim, #667169);
+    transform: scale(1.05);
+  }
+
+  .about-btn:active {
+    transform: scale(0.95);
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .app-header {
@@ -345,6 +388,10 @@ const base = import.meta.env.BASE_URL;
       gap: 0.5rem;
     }
 
+    .header-actions {
+      gap: 0.35rem;
+    }
+
     .live-clock {
       font-size: 0.65rem;
       padding: 0.2rem 0.6rem 0.2rem 0.4rem;
@@ -368,6 +415,17 @@ const base = import.meta.env.BASE_URL;
     }
 
     .theme-btn :global(svg) {
+      width: 14px;
+      height: 14px;
+    }
+
+    .about-btn {
+      height: 28px;
+      width: 28px;
+      padding: 0.2rem 0.4rem;
+    }
+
+    .about-btn :global(svg) {
       width: 14px;
       height: 14px;
     }
@@ -421,6 +479,17 @@ const base = import.meta.env.BASE_URL;
     }
 
     .theme-btn :global(svg) {
+      width: 12px;
+      height: 12px;
+    }
+
+    .about-btn {
+      height: 24px;
+      width: 24px;
+      padding: 0.15rem 0.3rem;
+    }
+
+    .about-btn :global(svg) {
       width: 12px;
       height: 12px;
     }

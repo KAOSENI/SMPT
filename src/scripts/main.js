@@ -14,6 +14,7 @@ import { openDetail, closeDetail } from './detail.js';
 import { closeSettings } from './settings.js';
 // Importar dashboard para inicialización
 import { initDashboard } from './dashboard.js';
+import { openAbout } from './about.js';
 
 // El HTML generado por eventos.js (bitácora) y map.js (clusters) usa
 // onclick="openDetail(id)" como texto plano, así que necesita existir en window.
@@ -36,6 +37,8 @@ document.addEventListener('keydown', e => {
 // Tema inicial: el que quedó guardado en una sesión anterior, o Claro por defecto.
 setTheme(loadTheme() || 'light');
 wireThemeButtons();
+
+document.getElementById('about-btn')?.addEventListener('click', openAbout);
 
 // Estado inicial del semáforo de cada transmisor (sin disparar eventos de bitácora)
 state.forEach(tx => {

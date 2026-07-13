@@ -11,6 +11,7 @@ import '../styles/cards.css';
 import '../styles/modal.css';
 import '../styles/footer.css';
 import '../styles/responsive.css';
+import '../styles/about.css';
 
 interface Props {
   title?: string;
@@ -21,9 +22,6 @@ const {
   description = 'Panel de monitoreo en tiempo real de los 11 transmisores del Sistema Chiapaneco de Radio, Televisión y Cinematografía: potencia, ROE, temperatura, alimentación eléctrica y estado por transmisor.',
 } = Astro.props;
 
-// El sitio se publica bajo /SMPT (ver "base" en astro.config.mjs), así que
-// los assets de /public deben resolverse con BASE_URL (mismo criterio que
-// en Header.astro), o se rompen en producción aunque funcionen en local.
 const base = import.meta.env.BASE_URL;
 const siteUrl = Astro.site ? new URL(Astro.url.pathname, Astro.site).toString() : undefined;
 const ogImage = Astro.site ? new URL(`${base}logo-schrtyc.png`, Astro.site).toString() : `${base}logo-schrtyc.png`;
@@ -37,8 +35,23 @@ const ogImage = Astro.site ? new URL(`${base}logo-schrtyc.png`, Astro.site).toSt
   <title>{title}</title>
   <meta name="description" content={description} />
 
-  <link rel="icon" type="image/png" href={`${base}logo-schrtyc.png`} />
+  <!-- ===== FAVICONS ===== -->
+  <!-- iOS / Safari -->
+  <link rel="apple-touch-icon" sizes="180x180" href={`${base}apple-touch-icon.png`} />
+  
+  <!-- Navegadores antiguos / favoritos -->
+  <link rel="shortcut icon" href={`${base}favicon.ico`} />
+  
+  <!-- Navegadores modernos con soporte SVG -->
+  <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+  
+  <!-- PNG de respaldo -->
+  <link rel="icon" type="image/png" sizes="96x96" href={`${base}favicon-96x96.png`} />
+  
+  <!-- Manifest para PWA / Chrome -->
+  <link rel="manifest" href={`${base}site.webmanifest`} />
 
+  <!-- ===== META TAGS ===== -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
@@ -52,10 +65,6 @@ const ogImage = Astro.site ? new URL(`${base}logo-schrtyc.png`, Astro.site).toSt
 
   <script is:inline>
     // Aplica el tema guardado ANTES de que el navegador pinte la página.
-    // Tiene que ser un script inline normal (is:inline), no un módulo: los
-    // módulos de Astro se difieren y corren después del primer render, que
-    // es justo lo que causa el flash de tema Claro seguido de un cambio de
-    // golpe. La llave debe coincidir con THEME_KEY en src/scripts/persist.js.
     (function () {
       try {
         var theme = localStorage.getItem('smpt:theme:v1');

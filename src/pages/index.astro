@@ -11,6 +11,7 @@ import Sidebar from '../components/Sidebar.astro';
 import TransmitterGrid from '../components/TransmitterGrid.astro';
 import DetailModal from '../components/DetailModal.astro';
 import SettingsModal from '../components/SettingsModal.astro';
+import AboutModal from '../components/AboutModal.astro'; // <-- AGREGADO
 import Footer from '../components/Footer.astro';
 
 // Importar datos para estadísticas iniciales (SSR)
@@ -69,6 +70,7 @@ const lastUpdate = new Date().toLocaleTimeString('es-MX', {
 
   <DetailModal />
   <SettingsModal />
+  <AboutModal /> <!-- <-- AGREGADO -->
 
   <script>
     // Astro compila esto como módulo ES y lo enlaza automáticamente al final
