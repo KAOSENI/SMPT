@@ -14,6 +14,7 @@ import { renderGrid } from './grid.js';
 import { renderGeoMap } from './map.js';
 import { openDetail, openDetailId } from './detail.js';
 import { openSettings, settingsOpenId } from './settings.js';
+import { saveConfig } from './persist.js';
 
 export function toggleEquipmentInstalled(id, key) {
   state[id].equipment[key].installed = !state[id].equipment[key].installed;
@@ -84,6 +85,10 @@ export function checkStatusChange(txId) {
 }
 
 export function renderAll() {
+  // Guarda umbrales/fases/equipos en localStorage en cada cambio — así
+  // sobreviven a un refresh o a cerrar y volver a abrir el sitio. Los
+  // valores simulados en vivo (power/vswr/temp/historial) no se tocan.
+  saveConfig(state);
   renderGrid();
   renderGeoMap();
   updateSidebarStats();

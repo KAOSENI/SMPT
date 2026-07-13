@@ -4,7 +4,7 @@
 
 import { state } from './state.js';
 import { statusOf } from './status.js';
-import { setTheme, wireThemeButtons } from './theme.js';
+import { setTheme, wireThemeButtons, loadTheme } from './theme.js';
 import { renderGeoMap } from './map.js';
 import { setupMapInteraction } from './map-interaction.js';
 import { renderGrid } from './grid.js';
@@ -33,8 +33,8 @@ document.addEventListener('keydown', e => {
   else closeDetail();
 });
 
-// Tema inicial
-setTheme('light');
+// Tema inicial: el que quedó guardado en una sesión anterior, o Claro por defecto.
+setTheme(loadTheme() || 'light');
 wireThemeButtons();
 
 // Estado inicial del semáforo de cada transmisor (sin disparar eventos de bitácora)

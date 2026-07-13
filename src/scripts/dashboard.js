@@ -134,7 +134,6 @@ export function updateDashboard(metrics) {
 export function initDashboard() {
   const metrics = calculateMetrics(state);
   updateDashboard(metrics);
-  console.log('[Dashboard] Inicializado con', metrics.total, 'transmisores');
 }
 
 // Exportar módulo
