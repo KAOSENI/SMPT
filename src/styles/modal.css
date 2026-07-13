@@ -104,8 +104,46 @@
 
   .detail-freq { font-family: var(--mono); color: var(--text-dim); font-size: 12px; margin-bottom: 18px; }
 
+  /* Layout del cuerpo del modal de detalle: en móvil es una sola columna
+     apilada (mismo orden que antes). En desktop se reparte en dos columnas
+     para aprovechar el ancho extra, sin depender del orden en el DOM
+     (grid-template-areas resuelve la posición visual en cada breakpoint). */
+  .detail-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "metrics"
+      "phase"
+      "equipment"
+      "events"
+      "history";
+    gap: 18px;
+    margin-bottom: 4px;
+  }
+  .d-area-metrics { grid-area: metrics; }
+  .d-area-phase { grid-area: phase; }
+  .d-area-equipment { grid-area: equipment; }
+  .d-area-events { grid-area: events; }
+  .d-area-history { grid-area: history; }
+
+  @media (min-width: 860px) {
+    #detail-content {
+      max-width: 900px;
+    }
+    .detail-body {
+      grid-template-columns: 1fr 1fr;
+      column-gap: 28px;
+      row-gap: 18px;
+      align-items: start;
+      grid-template-areas:
+        "metrics equipment"
+        "phase equipment"
+        "history events";
+    }
+  }
+
   .detail-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
   }
   .metric-box {
     background: var(--surface-2); border: 1px solid var(--panel-line); border-radius: 6px; padding: 10px 12px;

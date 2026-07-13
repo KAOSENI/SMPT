@@ -56,6 +56,12 @@ export function tick() {
     window.updateSidebarGauge(metrics.availability);
   }
 
+  // Ventana de "Estadísticas detalladas": antes solo se llenaba una vez al
+  // abrirla y se quedaba congelada mientras seguía abierta. Ahora se
+  // refresca en cada tick, igual que el panel de detalle/configuración
+  // (la función internamente no hace nada si el modal está cerrado).
+  if (window.__refreshStatsModal) window.__refreshStatsModal();
+
   const active = document.activeElement;
   const editingThreshold = active && active.matches('#settings-content input[type="number"]');
   if (openDetailId !== null) openDetail(openDetailId);

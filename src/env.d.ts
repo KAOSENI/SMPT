@@ -24,6 +24,7 @@ declare global {
     // Ventana flotante de estadísticas
     openStatsModal?: () => void;
     closeStatsModal?: () => void;
+    __refreshStatsModal?: () => void;
     
     // Otras funciones globales (ya existentes)
     openDetail?: (id: number | string) => void;

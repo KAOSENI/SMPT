@@ -164,26 +164,39 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
 </div>
 
 <script>
+  import { state } from '../scripts/state.js';
+  import { statusOf } from '../scripts/status.js';
+
   // ============================================================
   // FUNCIONES DE ESTADO
   // ============================================================
-  
+  // Antes esto dependía de window.__APP_STATE__ (nunca se asignaba en
+  // ningún archivo del proyecto) o, si eso fallaba, releía el texto ya
+  // pintado en otros elementos del sidebar (frágil: si ese texto no se
+  // había actualizado todavía, se propagaba el valor viejo). Ahora se
+  // calcula una sola vez desde `state`, la misma fuente de verdad que usa
+  // el resto de la app (grid, mapa, tarjetas de detalle).
+
   function getStatusCounts(): { ok: number; warn: number; crit: number } {
-    try {
-      if (window.__APP_STATE__) {
-        const state = window.__APP_STATE__;
-        const ok = state.filter((tx: any) => tx.status === 'ok').length;
-        const warn = state.filter((tx: any) => tx.status === 'warn').length;
-        const crit = state.filter((tx: any) => tx.status === 'crit').length;
-        return { ok, warn, crit };
-      }
-      const ok = parseInt(document.getElementById('sidebar-ok-value')?.textContent || '0') || 0;
-      const warn = parseInt(document.getElementById('sidebar-warn-value')?.textContent || '0') || 0;
-      const crit = parseInt(document.getElementById('sidebar-crit-value')?.textContent || '0') || 0;
-      return { ok, warn, crit };
-    } catch {
-      return { ok: 0, warn: 0, crit: 0 };
-    }
+    let ok = 0, warn = 0, crit = 0;
+    state.forEach(tx => {
+      const s = statusOf(tx);
+      if (s === 'ok') ok++;
+      else if (s === 'warn') warn++;
+      else crit++;
+    });
+    return { ok, warn, crit };
+  }
+
+  // Disponibilidad ponderada: ok=100%, warn=50%, crit=0% (mismo criterio
+  // que dashboard.js). Se calcula aquí también porque el gauge y el modal
+  // de estadísticas viven en este componente y necesitan el número real,
+  // no un valor leído (y a veces inexistente) de otro elemento del DOM.
+  function getAvailability(): number {
+    const { ok, warn, crit } = getStatusCounts();
+    const total = ok + warn + crit;
+    if (total === 0) return 0;
+    return Math.round(((ok * 100) + (warn * 50)) / total);
   }
 
   function updateStatusValues(ok: number, warn: number, crit: number): void {
@@ -196,14 +209,20 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   }
 
   // ============================================================
-  // FUNCIONES DEL MODAL CORREGIDAS
+  // FUNCIONES DEL MODAL
   // ============================================================
+
+  // Mientras el modal está abierto, se refresca en cada tick (ver el hook
+  // window.__refreshStatsModal más abajo, y tick.js). Antes solo se
+  // actualizaba una vez al abrirlo y se quedaba congelado.
+  let statsModalOpen = false;
 
   function openStatsModal(): void {
     const overlay = document.getElementById('stats-overlay');
     if (!overlay) return;
     
     try {
+      statsModalOpen = true;
       updateStatsModal();
       overlay.style.display = 'flex';
       void overlay.offsetHeight;
@@ -216,6 +235,7 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     const overlay = document.getElementById('stats-overlay');
     if (!overlay) return;
     
+    statsModalOpen = false;
     overlay.classList.remove('is-open');
     document.body.style.overflow = '';
     
@@ -233,16 +253,11 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   function updateStatsModal(): void {
     try {
       const counts = getStatusCounts();
-      const total = parseInt(document.getElementById('sidebar-total')?.textContent || '11') || 11;
-      const fm = parseInt(document.getElementById('sidebar-fm')?.textContent || '7') || 7;
-      const am = parseInt(document.getElementById('sidebar-am')?.textContent || '4') || 4;
-      
-      const availabilityEl = document.getElementById('stat-availability');
-      let availability = 64;
-      if (availabilityEl) {
-        availability = parseFloat(availabilityEl.textContent?.replace('%', '') || '64') || 64;
-      }
-      
+      const total = state.length;
+      const fm = parseInt(document.getElementById('sidebar-fm')?.textContent || '0') || 0;
+      const am = parseInt(document.getElementById('sidebar-am')?.textContent || '0') || 0;
+      const availability = getAvailability();
+
       const elements = {
         availability: document.getElementById('stats-availability'),
         availabilityBar: document.getElementById('stats-availability-bar'),
@@ -269,12 +284,20 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
       if (elements.warn) elements.warn.textContent = String(counts.warn);
       if (elements.crit) elements.crit.textContent = String(counts.crit);
       if (elements.total) elements.total.textContent = String(total);
-      
-      const lastUpdate = document.getElementById('stat-last-update');
-      if (lastUpdate && elements.lastUpdate) {
-        elements.lastUpdate.textContent = lastUpdate.textContent || '--:--:--';
+
+      if (elements.lastUpdate) {
+        elements.lastUpdate.textContent = new Date().toLocaleTimeString('es-MX', {
+          hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+        });
       }
     } catch {}
+  }
+
+  // Se llama en cada tick (ver window.__refreshStatsModal más abajo) — pero
+  // solo hace trabajo real si el modal sigue abierto, igual que openDetail()/
+  // openSettings() en tick.js solo refrescan si su ventana está abierta.
+  function refreshStatsModalIfOpen(): void {
+    if (statsModalOpen) updateStatsModal();
   }
 
   // ============================================================
@@ -317,13 +340,7 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     const chart = window._gaugeChart;
     if (!chart) return;
 
-    const availabilityEl = document.getElementById('stat-availability');
-    let availability = 64;
-    if (availabilityEl) {
-      availability = parseFloat(availabilityEl.textContent?.replace('%', '') || '64') || 64;
-    }
-
-    renderGaugeArc(chart, availability);
+    renderGaugeArc(chart, getAvailability());
   }
 
   function getGaugeStatus(availability: number): { color: string; from: string; to: string; label: string } {
@@ -484,6 +501,7 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   };
   window.openStatsModal = openStatsModal;
   window.closeStatsModal = closeStatsModal;
+  window.__refreshStatsModal = refreshStatsModalIfOpen;
 
   // ============================================================
   // CONFIGURACIÓN DE EVENTOS
