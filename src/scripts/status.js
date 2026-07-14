@@ -4,42 +4,60 @@
 
 import { EQUIPMENT_LABELS } from './data/stations.js';
 
-export function statusOf(tx) {
+// Evalúa CADA parámetro por separado (ROE, temperatura, potencia, fases,
+// equipos) y junta todo en una sola lista de "motivos", cada uno con su
+// propia severidad (1 = advertencia, 2 = crítico). El estado final es la
+// severidad más alta encontrada — igual que antes — pero ahora también
+// sabemos CUÁLES motivos llegaron a esa severidad, para poder mostrarlos.
+//
+// Es intencional que un transmisor pueda tener varios motivos a la vez
+// (p. ej. ROE crítico Y temperatura en advertencia simultáneamente): al
+// final solo se muestran los motivos que están en la severidad máxima, así
+// el texto nunca contradice el color/estado general del transmisor.
+export function evaluateStatus(tx) {
   const eq = tx.equipment;
   const pm = tx.config.phaseMonitoring;
   const th = tx.thresholds;
+  const reasons = [];
 
-  let base = 'ok';
   const critVswr = th.vswrMax + 0.3;
   const critTemp = th.tempMax + 8;
-  if (tx.vswr > critVswr || tx.temp > critTemp) base = 'crit';
-  else if (tx.vswr > th.vswrMax || tx.temp > th.tempMax || tx.power < th.powerMin) base = 'warn';
+
+  if (tx.vswr > critVswr) reasons.push({ severity: 2, text: 'ROE muy elevado' });
+  else if (tx.vswr > th.vswrMax) reasons.push({ severity: 1, text: 'ROE elevado' });
+
+  if (tx.temp > critTemp) reasons.push({ severity: 2, text: 'Temperatura muy alta' });
+  else if (tx.temp > th.tempMax) reasons.push({ severity: 1, text: 'Temperatura alta' });
+
+  if (tx.power < th.powerMin) reasons.push({ severity: 1, text: 'Potencia baja' });
 
   if (pm > 0) {
     const aOk = tx.phaseA, bOk = (pm === 2) ? tx.phaseB : true;
-    if (!aOk && !bOk) return 'crit';
-    if (!aOk || !bOk) {
-      if (base === 'crit') return 'crit';
-      return 'warn';
-    }
+    if (!aOk && !bOk) reasons.push({ severity: 2, text: 'Fase A y B caídas' });
+    else if (!aOk) reasons.push({ severity: 1, text: pm === 2 ? 'Fase A caída' : 'Fase eléctrica caída' });
+    else if (!bOk) reasons.push({ severity: 1, text: 'Fase B caída' });
   }
-
-  let criticalInstalledOff = false;
-  let nonCriticalInstalledOff = false;
 
   for (const [key, eqState] of Object.entries(eq)) {
-    if (!eqState.installed) continue;
-    if (!eqState.on) {
-      if (EQUIPMENT_LABELS[key].critical) criticalInstalledOff = true;
-      else nonCriticalInstalledOff = true;
-    }
+    if (!eqState.installed || eqState.on) continue;
+    const label = EQUIPMENT_LABELS[key];
+    reasons.push({ severity: label.critical ? 2 : 1, text: `${label.name} apagado` });
   }
 
-  if (criticalInstalledOff) return 'crit';
-  if (nonCriticalInstalledOff) {
-    if (base === 'crit') return 'crit';
-    return 'warn';
-  }
+  const maxSeverity = reasons.reduce((m, r) => Math.max(m, r.severity), 0);
+  const status = maxSeverity === 2 ? 'crit' : maxSeverity === 1 ? 'warn' : 'ok';
+  const topReasons = reasons.filter(r => r.severity === maxSeverity).map(r => r.text);
 
-  return base;
+  return { status, reasons: topReasons };
+}
+
+export function statusOf(tx) {
+  return evaluateStatus(tx).status;
+}
+
+// Motivo(s) específico(s) por los que un transmisor está en advertencia o
+// crítico (p. ej. "ROE elevado", "Temperatura alta"). Arreglo vacío si el
+// transmisor está en ok.
+export function statusReasons(tx) {
+  return evaluateStatus(tx).reasons;
 }

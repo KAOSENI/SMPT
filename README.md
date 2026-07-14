@@ -7,7 +7,7 @@
 **Panel de monitoreo en tiempo real para los 11 transmisores del Sistema Chiapaneco de Radio, Televisión y Cinematografía.**
 
 [![Deploy to GitHub Pages](https://img.shields.io/github/actions/workflow/status/KAOSENI/SMPT/main.yml?branch=main&label=deploy&logo=github)](https://github.com/KAOSENI/SMPT/actions/workflows/main.yml)
-[![Versión](https://img.shields.io/badge/versi%C3%B3n-0.7.1-0a6e4b)](https://github.com/KAOSENI/SMPT/commits/main)
+[![Versión](https://img.shields.io/badge/versi%C3%B3n-0.7.5-0a6e4b)](https://github.com/KAOSENI/SMPT/commits/main)
 [![Astro](https://img.shields.io/badge/Astro-%5E7.0.7-BC52EE?logo=astro&logoColor=white)](https://astro.build)
 [![Licencia](https://img.shields.io/github/license/KAOSENI/SMPT)](./LICENSE)
 

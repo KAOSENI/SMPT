@@ -59,3 +59,8 @@
     transition:color 0.6s ease;
   }
   .txt-ok{ color:var(--phosphor); } .txt-warn{ color:var(--amber); } .txt-crit{ color:var(--red); }
+
+  .card-status-reason{
+    font-family:var(--sans); font-size:11px; color:var(--text-dim);
+    margin-top:2px;
+  }

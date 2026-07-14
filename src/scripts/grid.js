@@ -8,7 +8,7 @@
 // instancia viva de ECharts que solo recibe datos nuevos con setOption().
 
 import { state } from './state.js';
-import { statusOf } from './status.js';
+import { statusOf, statusReasons } from './status.js';
 import { updateSidebarStats } from './events.js';
 import { openDetail } from './detail.js';
 import { chartSkeletonHtml, mountLineChart, updateLineChart } from './charts.js';
@@ -30,14 +30,15 @@ function buildCardSkeleton(tx) {
       </div>
       <div class="dot" id="dot-${tx.id}" title="Estado del transmisor"></div>
     </div>
-    <div class="meter-row"><span title="Porcentaje de la potencia nominal del transmisor">Potencia</span><span id="power-val-${tx.id}">—</span></div>
+    <div class="meter-row"><span title="Porcentaje de la potencia nominal del transmisor">Potencia actual</span><span id="power-val-${tx.id}">—</span></div>
     <div class="meter-track"><div class="meter-fill" id="meter-${tx.id}" style="width:0%;"></div></div>
 
     <div class="card-graph-container" style="margin: 10px 0;">
-      ${chartSkeletonHtml(`card-chart-${tx.id}`, 'Historial Potencia')}
+      ${chartSkeletonHtml(`card-chart-${tx.id}`, 'Historial de potencia')}
     </div>
 
     <p class="card-status-text" id="status-text-${tx.id}"></p>
+    <p class="card-status-reason" id="status-reason-${tx.id}"></p>
   `;
 
   card.addEventListener('click', () => openDetail(tx.id));
@@ -53,6 +54,7 @@ function updateCardData(tx, s) {
   const colorMap = { ok: '#22c55e', warn: '#eab308', crit: '#ef4444' };
   const currentColor = colorMap[s] || '#6b7280';
   const fmtPct = (val) => val.toFixed(0) + '%';
+  const reasons = s === 'ok' ? [] : statusReasons(tx);
 
   const dot = document.getElementById(`dot-${tx.id}`);
   if (dot) dot.className = `dot dot-${s}`;
@@ -72,13 +74,23 @@ function updateCardData(tx, s) {
     statusText.textContent = s === 'ok' ? 'Operando con normalidad' : s === 'warn' ? 'Requiere revisión' : 'Alarma activa';
   }
 
+  // Motivo específico (ROE, temperatura, potencia, fase o equipo) por el
+  // que se disparó la advertencia/crítico — así no hay que abrir el
+  // detalle solo para saber qué está mal.
+  const statusReason = document.getElementById(`status-reason-${tx.id}`);
+  if (statusReason) {
+    statusReason.textContent = reasons.join(' · ');
+    statusReason.style.display = reasons.length ? '' : 'none';
+  }
+
   // Describe la tarjeta completa para lectores de pantalla (equivalente a lo
-  // que ya se ve en pantalla: nombre, estado y potencia actual) y refuerza
-  // visualmente que la tarjeta es interactiva.
+  // que ya se ve en pantalla: nombre, estado, motivo y potencia actual) y
+  // refuerza visualmente que la tarjeta es interactiva.
   const card = document.getElementById(`card-${tx.id}`);
   if (card) {
     const statusLabel = s === 'ok' ? 'operando con normalidad' : s === 'warn' ? 'en advertencia' : 'en estado crítico';
-    card.setAttribute('aria-label', `${tx.shortName}, ${statusLabel}, potencia ${tx.power.toFixed(0)} por ciento. Abrir detalle.`);
+    const reasonSuffix = reasons.length ? ` (${reasons.join(', ')})` : '';
+    card.setAttribute('aria-label', `${tx.shortName}, ${statusLabel}${reasonSuffix}, potencia ${tx.power.toFixed(0)} por ciento. Abrir detalle.`);
   }
 
   // La gráfica se monta UNA vez (cuando el contenedor ya existe en el DOM)
