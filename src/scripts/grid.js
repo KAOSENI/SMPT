@@ -20,6 +20,7 @@ function buildCardSkeleton(tx) {
   card.id = `card-${tx.id}`;
   card.className = 'card';
   card.tabIndex = 0;
+  card.setAttribute('role', 'button');
 
   card.innerHTML = `
     <div class="card-top">
@@ -27,9 +28,9 @@ function buildCardSkeleton(tx) {
         <p class="tx-name">${tx.shortName}</p>
         <p class="tx-freq">${tx.freq} · ${tx.band} · ${tx.municipio}</p>
       </div>
-      <div class="dot" id="dot-${tx.id}"></div>
+      <div class="dot" id="dot-${tx.id}" title="Estado del transmisor"></div>
     </div>
-    <div class="meter-row"><span>Potencia</span><span id="power-val-${tx.id}">—</span></div>
+    <div class="meter-row"><span title="Porcentaje de la potencia nominal del transmisor">Potencia</span><span id="power-val-${tx.id}">—</span></div>
     <div class="meter-track"><div class="meter-fill" id="meter-${tx.id}" style="width:0%;"></div></div>
 
     <div class="card-graph-container" style="margin: 10px 0;">
@@ -40,13 +41,18 @@ function buildCardSkeleton(tx) {
   `;
 
   card.addEventListener('click', () => openDetail(tx.id));
+  card.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    openDetail(tx.id);
+  });
   return card;
 }
 
 function updateCardData(tx, s) {
   const colorMap = { ok: '#22c55e', warn: '#eab308', crit: '#ef4444' };
   const currentColor = colorMap[s] || '#6b7280';
-  const fmtKw = (val) => val.toFixed(1) + ' kW';
+  const fmtPct = (val) => val.toFixed(0) + '%';
 
   const dot = document.getElementById(`dot-${tx.id}`);
   if (dot) dot.className = `dot dot-${s}`;
@@ -66,12 +72,25 @@ function updateCardData(tx, s) {
     statusText.textContent = s === 'ok' ? 'Operando con normalidad' : s === 'warn' ? 'Requiere revisión' : 'Alarma activa';
   }
 
+  // Describe la tarjeta completa para lectores de pantalla (equivalente a lo
+  // que ya se ve en pantalla: nombre, estado y potencia actual) y refuerza
+  // visualmente que la tarjeta es interactiva.
+  const card = document.getElementById(`card-${tx.id}`);
+  if (card) {
+    const statusLabel = s === 'ok' ? 'operando con normalidad' : s === 'warn' ? 'en advertencia' : 'en estado crítico';
+    card.setAttribute('aria-label', `${tx.shortName}, ${statusLabel}, potencia ${tx.power.toFixed(0)} por ciento. Abrir detalle.`);
+  }
+
   // La gráfica se monta UNA vez (cuando el contenedor ya existe en el DOM)
-  // y de ahí en adelante solo se le actualizan los datos.
+  // y de ahí en adelante solo se le actualizan los datos. Usa el mismo
+  // histórico real (tx.history.power) que el panel de detalle, y el umbral
+  // que de verdad está configurado para este transmisor — así la mini-gráfica
+  // siempre es coherente con el medidor de arriba, en vez de una animación
+  // decorativa sin relación con el valor mostrado.
   if (!cardChartInstances[tx.id]) {
     cardChartInstances[tx.id] = mountLineChart(`card-chart-${tx.id}`);
   }
-  updateLineChart(cardChartInstances[tx.id], `card-chart-${tx.id}`, tx.waveform, 75, currentColor, fmtKw);
+  updateLineChart(cardChartInstances[tx.id], `card-chart-${tx.id}`, tx.history.power, tx.thresholds.powerMin, currentColor, fmtPct);
 }
 
 export function renderGrid() {

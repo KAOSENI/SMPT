@@ -28,7 +28,6 @@ export const state = STATIONS.map((s, i) => {
     lat: s.lat, lon: s.lon,
     power, powerKW: s.powerKW, vswr, temp,
     uptime: Math.floor(rand(30, 900)),
-    waveform: Array.from({ length: 16 }, () => rand(20, 100)),
     history: { power: seedHistory(power), vswr: seedHistory(vswr), temp: seedHistory(temp) },
     logs: [],
     thresholds: { powerMin: 72, vswrMax: 1.5, tempMax: 42 },

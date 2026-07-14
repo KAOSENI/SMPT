@@ -8,7 +8,7 @@ import { setTheme, wireThemeButtons, loadTheme } from './theme.js';
 import { renderGeoMap } from './map.js';
 import { setupMapInteraction } from './map-interaction.js';
 import { renderGrid } from './grid.js';
-import { updateSidebarStats, addEvent } from './events.js';
+import { updateSidebarStats } from './events.js';
 import { tick } from './tick.js';
 import { openDetail, closeDetail } from './detail.js';
 import { closeSettings } from './settings.js';
@@ -53,8 +53,6 @@ updateSidebarStats();
 
 // Inicializar dashboard
 initDashboard();
-
-addEvent(0, 'ok', 'sistema de monitoreo iniciado');
 
 setInterval(() => {
   tick();

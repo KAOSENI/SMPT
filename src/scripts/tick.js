@@ -28,7 +28,6 @@ export function tick() {
     tx.power = Math.min(100, Math.max(40, tx.power + rand(-4, 4)));
     tx.vswr = Math.max(1.0, tx.vswr + rand(-0.05, 0.05));
     tx.temp = Math.max(25, tx.temp + rand(-1.5, 1.5));
-    tx.waveform.shift(); tx.waveform.push(rand(20, 100));
     pushHistory(tx);
     const changed = checkStatusChange(tx.id);
     if (changed) statusChanged = true;

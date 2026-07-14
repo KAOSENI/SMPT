@@ -11,7 +11,7 @@
 [![Astro](https://img.shields.io/badge/Astro-%5E7.0.7-BC52EE?logo=astro&logoColor=white)](https://astro.build)
 [![Licencia](https://img.shields.io/github/license/KAOSENI/SMPT)](./LICENSE)
 
-**[🔴 Ver en producción](https://kaoseni.github.io/SMPT/)**
+**[Ver en producción](https://kaoseni.github.io/SMPT/)**
 
 </div>
 
@@ -31,6 +31,8 @@
 - [Notas sobre los datos](#notas-sobre-los-datos)
 - [Licencia](#licencia)
 
+---
+
 ## Qué es esto
 
 Prototipo de plataforma de monitoreo para los 11 transmisores (AM/FM) del
@@ -40,16 +42,18 @@ cada apartado por separado y desplegarlo automáticamente en GitHub Pages.
 
 ## Características
 
-- 🗺️ **Mapa interactivo** de Chiapas con la ubicación real de los 11 transmisores, zoom y arrastre.
-- 📡 **Cuadrícula de transmisores** con mini-gráficas de historial en vivo por tarjeta.
-- 🔍 **Panel de detalle** por transmisor — métricas, alimentación eléctrica, cadena de equipos, eventos e historial — con layout de 2 columnas en pantallas anchas.
-- ⚙️ **Panel de configuración** — umbrales de alerta, monitoreo de fase eléctrica, equipos instalados, con opción de restablecer valores por defecto.
-- 📊 **Panel lateral** con disponibilidad de red (gauge), distribución de estados (dona) y bitácora de eventos.
-- 🔔 Notificaciones tipo *toast* para cambios de estado relevantes.
-- ℹ️ Ventana **"Acerca de"** con explicación de términos técnicos, siglas y créditos del proyecto.
-- 🎨 **3 temas de color** (Claro / Fósforo / Oscuro), sin flash al cargar la página.
-- 💾 **Persistencia local**: la configuración (umbrales, fases, equipos, tema) sobrevive a un refresh o a cerrar y volver a abrir el sitio.
-- 📱 Responsive de extremo a extremo, con **PWA real**: instalable en escritorio/móvil (`site.webmanifest` + favicon completo) y disponible sin conexión mediante *service worker* (`public/sw.js`).
+| Apartado | Descripción |
+|---|---|
+| **Mapa interactivo** | Ubicación real de los 11 transmisores sobre el contorno de Chiapas, con zoom y arrastre. |
+| **Cuadrícula de transmisores** | Tarjetas con mini-gráficas de historial en vivo por transmisor. |
+| **Panel de detalle** | Métricas, alimentación eléctrica, cadena de equipos, eventos e historial — layout de 2 columnas en pantallas anchas. |
+| **Panel de configuración** | Umbrales de alerta, monitoreo de fase eléctrica, equipos instalados, con opción de restablecer valores por defecto. |
+| **Panel lateral** | Disponibilidad de red (gauge), distribución de estados (dona) y bitácora de eventos. |
+| **Notificaciones** | Avisos tipo *toast* para cambios de estado relevantes. |
+| **Ventana "Acerca de"** | Explicación de términos técnicos, siglas y créditos del proyecto. |
+| **Temas de color** | Claro / Fósforo / Oscuro, sin flash al cargar la página. |
+| **Persistencia local** | La configuración (umbrales, fases, equipos, tema) sobrevive a un refresh o a cerrar y volver a abrir el sitio. |
+| **PWA real** | Instalable en escritorio/móvil (`site.webmanifest` + favicon completo) y disponible sin conexión mediante *service worker* (`public/sw.js`). |
 
 ## Tecnologías utilizadas
 
@@ -186,3 +190,11 @@ solo recurre a lo cacheado cuando de verdad no hay red.
 
 Este proyecto está bajo la licencia **GNU GPLv3** — ver [`LICENSE`](./LICENSE)
 para el texto completo.
+
+---
+
+<div align="center">
+
+Sergio Iván Díaz Hernández · 2026
+
+</div>

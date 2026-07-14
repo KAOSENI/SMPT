@@ -1,4 +1,4 @@
-  /* Grid de transmisores */
+/* Grid de transmisores */
   .grid-section-title {
     font-family:var(--mono);
     font-size:11px;
@@ -53,13 +53,9 @@
     transition:width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  .waveform{ height:28px; display:flex; align-items:flex-end; gap:2px; }
-  .waveform span{ flex:1; background:var(--phosphor-dim); border-radius:1px 1px 0 0; transition:height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-
   .card-status-text{
     font-family:var(--mono); font-size:9px; letter-spacing:0.05em;
     text-transform:uppercase; margin-top:10px;
     transition:color 0.6s ease;
   }
   .txt-ok{ color:var(--phosphor); } .txt-warn{ color:var(--amber); } .txt-crit{ color:var(--red); }
-
