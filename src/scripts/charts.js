@@ -39,14 +39,26 @@ export function mountLineChart(containerId) {
 
 // Actualiza una instancia viva con datos nuevos — NO recrea el SVG,
 // solo cambia la serie (ECharts hace la transición internamente).
+//
+// El texto junto al título NO muestra el valor actual (eso ya se ve en el
+// medidor/metric-box de arriba, mostrarlo dos veces es redundante) — muestra
+// el CAMBIO entre el primer y el último punto del historial visible, con
+// una flecha de tendencia. Es información que el medidor no da: hacia dónde
+// se está moviendo, no solo dónde está parado ahora mismo.
 export function updateLineChart(chart, containerId, values, thresholdValue, color, fmt) {
   if (!chart) return;
+  const first = values && values.length ? values[0] : 0;
   const last = values && values.length ? values[values.length - 1] : 0;
+  const delta = last - first;
 
   const valueLabel = document.getElementById(`${containerId}-value`);
   if (valueLabel) {
-    valueLabel.textContent = (typeof fmt === 'function') ? fmt(last) : String(last);
+    const arrow = delta > 0.05 ? '▲' : delta < -0.05 ? '▼' : '—';
+    const sign = delta > 0 ? '+' : '';
+    const deltaText = (typeof fmt === 'function') ? fmt(delta) : String(delta);
+    valueLabel.textContent = `${arrow} ${sign}${deltaText}`;
     valueLabel.style.color = color;
+    valueLabel.title = 'Cambio respecto al inicio del historial visible';
   }
 
   chart.setOption({

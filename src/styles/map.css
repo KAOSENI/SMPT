@@ -1,18 +1,80 @@
-/* MAPA + SIDEBAR */
-.map-sidebar-layout {
-  display: grid;
-  grid-template-columns: clamp(320px, 46vw, 540px) 1fr;
+/* MAPA + SIDEBAR + CUADRÍCULA */
+/* Flexbox en vez de CSS Grid con áreas fijas a propósito: con grid, si se
+   oculta una sección (p. ej. el panel lateral), la columna que le
+   correspondía queda reservada y vacía — el mapa no la ocupa solo. Con
+   flexbox, al desaparecer un elemento (display:none), los demás se
+   reacomodan y expanden automáticamente para llenar el espacio libre, sin
+   tener que calcular a mano cada combinación posible de secciones
+   visibles/ocultas.
+   align-items:flex-start (no "stretch") es igual de intencional: evita que
+   el mapa (siempre cuadrado) se estire para igualar la altura de un
+   contenido más alto al lado (como la cuadrícula de 11 transmisores), que
+   es justo lo que se veía mal antes. */
+/* justify-content:center es la pieza clave para "cuando un componente
+   principal queda solo en su fila, se centra en vez de quedarse pegado a
+   la izquierda con espacio vacío al lado". Con sidebar/grid-section (que
+   tienen flex-grow:1) no cambia nada, porque ya consumen todo el espacio
+   libre disponible — el centrado solo entra en juego cuando el que queda
+   solo es el mapa (flex-grow:0, tamaño fijo por su relación de aspecto
+   1:1), sin necesitar una regla por cada combinación posible de secciones
+   visibles/ocultas. */
+.layout-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
   gap: 20px;
   margin-bottom: 28px;
-  align-items: stretch; /* Impide desajustes causados por elementos que alteran la rejilla */
 }
 
-@media (max-width: 1024px) {
-  .map-sidebar-layout {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
+.layout-map {
+  flex: 0 1 clamp(320px, 46vw, 540px);
+  min-width: 0;
 }
+
+.layout-sidebar {
+  flex: 1 1 340px;
+  min-width: 0;
+}
+
+/* A todo lo ancho por defecto (fuerza su propia fila, debajo de mapa+sidebar). */
+.layout-grid-section {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+/* Preferencia "cuadrícula al lado del mapa": la cuadrícula de transmisores
+   toma el lugar del panel lateral (junto al mapa), y el panel lateral pasa
+   a su propia fila, a todo lo ancho. El atributo vive en <html> (no en
+   <main>) porque lo aplica un script inline en el <head>, antes de que
+   <main> exista, para evitar un flash del acomodo por defecto — ver
+   Layout.astro. */
+html[data-arrangement="grid-side"]:not([data-hidden-sections~="map"]) .layout-grid-section {
+  flex: 1 1 400px;
+  /* La cuadrícula puede tener muchas más filas de tarjetas que lo que mide
+     el mapa de alto (que es fijo, 1:1). En vez de dejar que se salga por
+     debajo del mapa sin control, se acota a la misma altura (misma fórmula
+     que define el lado del mapa) y se vuelve desplazable por dentro. Este
+     tope solo tiene sentido si el mapa sigue visible al lado — si se
+     oculta, la cuadrícula recupera su altura libre (ver regla siguiente). */
+  max-height: clamp(320px, 46vw, 540px);
+  overflow-y: auto;
+}
+
+html[data-arrangement="grid-side"][data-hidden-sections~="map"] .layout-grid-section {
+  flex: 1 1 100%;
+}
+
+html[data-arrangement="grid-side"] .layout-sidebar {
+  flex: 1 1 100%;
+}
+
+/* Secciones ocultas por preferencia del usuario — mismo criterio: el
+   atributo vive en <html> para poder aplicarse antes del primer pintado. */
+html[data-hidden-sections~="dashboard"] #layout-section-dashboard { display: none; }
+html[data-hidden-sections~="map"] #layout-section-map { display: none; }
+html[data-hidden-sections~="sidebar"] #layout-section-sidebar { display: none; }
+html[data-hidden-sections~="grid"] #layout-section-grid { display: none; }
 
 /* Mapa estrictamente cuadrado (1:1) */
 #geo-map {

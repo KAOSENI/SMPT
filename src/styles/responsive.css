@@ -1,9 +1,5 @@
-  /* Responsive */
+/* Responsive */
   @media (max-width: 1024px){
-    .map-sidebar-layout{ 
-      grid-template-columns:1fr;
-      align-items:start;
-    }
     .sidebar{ align-self:start; }
     #geo-map{ aspect-ratio:1/1; }
     .sidebar-card:nth-child(2){ min-height:160px; max-height:220px; }

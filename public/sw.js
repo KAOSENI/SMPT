@@ -53,6 +53,10 @@ self.addEventListener('fetch', (event) => {
           caches
             .match(request)
             .then((cached) => cached || caches.match(self.registration.scope))
+            // Si tampoco hay nada cacheado (primera visita sin conexión),
+            // respondWith() necesita SÍ o SÍ una Response; devolver
+            // undefined provoca "Failed to convert value to 'Response'".
+            .then((finalResponse) => finalResponse || Response.error())
         )
     );
     return;
@@ -69,7 +73,9 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => cached);
+        // Igual que arriba: si falla el fetch y no había nada en caché,
+        // hay que devolver una Response válida, no `undefined`.
+        .catch(() => cached || Response.error());
     })
   );
 });

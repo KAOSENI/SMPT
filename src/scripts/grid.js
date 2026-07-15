@@ -15,6 +15,13 @@ import { chartSkeletonHtml, mountLineChart, updateLineChart } from './charts.js'
 
 const cardChartInstances = {};
 
+// Llamado desde layout-prefs.js después de reacomodar la página: el
+// contenedor de cada mini-gráfica pudo haber cambiado de tamaño, y ECharts
+// no se reajusta solo — hay que pedírselo explícitamente.
+export function resizeCardCharts() {
+  Object.values(cardChartInstances).forEach((chart) => chart?.resize());
+}
+
 function buildCardSkeleton(tx) {
   const card = document.createElement('div');
   card.id = `card-${tx.id}`;

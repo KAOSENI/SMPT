@@ -3,7 +3,7 @@
 // Header sin contadores visibles, pero con IDs ocultos para compatibilidad
 // Mantiene: marca, título, selector de temas, reloj, badge "Sistema Chiapaneco" y botón Acerca de
 
-import { Sun, Moon, Lamp, Clock, Info } from '@lucide/astro';
+import { Sun, Moon, Lamp, Clock, Info, LayoutGrid } from '@lucide/astro';
 
 // El proyecto se despliega bajo una subruta (base: '/SMPT/' en astro.config.mjs),
 // así que los assets de /public deben resolverse con BASE_URL.
@@ -57,6 +57,11 @@ const base = import.meta.env.BASE_URL;
           </button>
         </div>
       </div>
+
+      <!-- Botón Disposición de la página -->
+      <button class="header-btn about-btn" id="layout-btn" aria-label="Disposición de la página" title="Elegir qué secciones se ven y cómo se acomodan">
+        <LayoutGrid size={18} stroke-width={2} />
+      </button>
 
       <!-- Botón Acerca de -->
       <button class="header-btn about-btn" id="about-btn" aria-label="Acerca de" title="Acerca de este sistema">

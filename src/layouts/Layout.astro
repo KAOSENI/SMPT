@@ -60,6 +60,9 @@ const ogImage = Astro.site ? new URL(`${baseUrl}logo-schrtyc.png`, Astro.site).t
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="SMPT" />
+  <!-- Estándar (Chrome/Android y navegadores modernos); Safari sigue -->
+  <!-- necesitando la etiqueta "apple-*" de arriba, así que se dejan ambas -->
+  <meta name="mobile-web-app-capable" content="yes" />
 
   <!-- ===== META TAGS ===== -->
   <meta property="og:type" content="website" />
@@ -74,11 +77,32 @@ const ogImage = Astro.site ? new URL(`${baseUrl}logo-schrtyc.png`, Astro.site).t
   <meta name="twitter:image" content={ogImage} />
 
   <script is:inline>
-    // Aplica el tema guardado ANTES de que el navegador pinte la página.
+    // Aplica el tema y la disposición guardados ANTES de que el navegador
+    // pinte la página — evita el "flash" del layout por defecto seguido de
+    // un salto al layout preferido. Las llaves deben coincidir con
+    // THEME_KEY/LAYOUT_KEY en src/scripts/persist.js.
     (function () {
       try {
         var theme = localStorage.getItem('smpt:theme:v1');
         if (theme) document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+
+      try {
+        var layout = JSON.parse(localStorage.getItem('smpt:layout:v1') || 'null');
+        if (layout) {
+          if (layout.arrangement === 'grid-side') {
+            document.documentElement.setAttribute('data-arrangement', 'grid-side');
+          }
+          if (layout.visible) {
+            var hidden = [];
+            ['dashboard', 'map', 'sidebar', 'grid'].forEach(function (key) {
+              if (layout.visible[key] === false) hidden.push(key);
+            });
+            if (hidden.length) {
+              document.documentElement.setAttribute('data-hidden-sections', hidden.join(' '));
+            }
+          }
+        }
       } catch (e) {}
     })();
   </script>

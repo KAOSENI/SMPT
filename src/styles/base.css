@@ -1,4 +1,4 @@
-  *{box-sizing:border-box;}
+*{box-sizing:border-box;}
   body{
     margin:0;
     background:
@@ -57,5 +57,4 @@
   .stat-crit .num{ color:var(--red); }
   .stat-label{ color:var(--text-dim); font-size:9px; letter-spacing:0.06em; text-transform:uppercase; }
 
-  main{ padding:20px 32px 40px; max-width:1320px; margin:0 auto; }
-
+  main{ padding:20px 32px 40px; max-width:min(1800px, 96vw); margin:0 auto; }

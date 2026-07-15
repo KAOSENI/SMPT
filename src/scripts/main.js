@@ -16,6 +16,8 @@ import { closeSettings } from './settings.js';
 import { initDashboard } from './dashboard.js';
 import { openAbout } from './about.js';
 import { registerServiceWorker } from './pwa.js';
+import { initLayout } from './layout-prefs.js';
+import { openLayoutModal, closeLayoutModal } from './layout-modal.js';
 
 // El HTML generado por eventos.js (bitácora) y map.js (clusters) usa
 // onclick="openDetail(id)" como texto plano, así que necesita existir en window.
@@ -29,6 +31,9 @@ document.getElementById('overlay').addEventListener('click', e => {
 document.getElementById('settings-overlay').addEventListener('click', e => {
   if (e.target.id === 'settings-overlay') closeSettings();
 });
+document.getElementById('layout-overlay')?.addEventListener('click', e => {
+  if (e.target.id === 'layout-overlay') closeLayoutModal();
+});
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (document.getElementById('settings-overlay').classList.contains('open')) closeSettings();
@@ -40,6 +45,12 @@ setTheme(loadTheme() || 'light');
 wireThemeButtons();
 
 document.getElementById('about-btn')?.addEventListener('click', openAbout);
+document.getElementById('layout-btn')?.addEventListener('click', openLayoutModal);
+
+// Preferencia de disposición guardada en una sesión anterior (qué secciones
+// se ven y cómo se acomodan) — se aplica antes de renderizar el resto para
+// no mostrar el diseño por defecto y luego saltar al preferido.
+initLayout();
 
 // Estado inicial del semáforo de cada transmisor (sin disparar eventos de bitácora)
 state.forEach(tx => {

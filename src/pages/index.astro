@@ -11,7 +11,8 @@ import Sidebar from '../components/Sidebar.astro';
 import TransmitterGrid from '../components/TransmitterGrid.astro';
 import DetailModal from '../components/DetailModal.astro';
 import SettingsModal from '../components/SettingsModal.astro';
-import AboutModal from '../components/AboutModal.astro'; // <-- AGREGADO
+import AboutModal from '../components/AboutModal.astro';
+import LayoutModal from '../components/LayoutModal.astro';
 import Footer from '../components/Footer.astro';
 
 // Importar datos para estadísticas iniciales (SSR)
@@ -50,27 +51,35 @@ const lastUpdate = new Date().toLocaleTimeString('es-MX', {
 <Layout>
   <Header />
 
-  <main>
+  <main id="main-layout">
     <!-- Dashboard de métricas globales -->
-    <DashboardStats 
-      client:load
-      total={initialMetrics.total}
-      lastUpdate={lastUpdate}
-    />
-
-    <div class="map-sidebar-layout">
-      <MapPanel />
-      <Sidebar />
+    <div id="layout-section-dashboard">
+      <DashboardStats
+        client:load
+        total={initialMetrics.total}
+        lastUpdate={lastUpdate}
+      />
     </div>
 
-    <TransmitterGrid />
+    <div class="layout-grid">
+      <div class="layout-map" id="layout-section-map">
+        <MapPanel />
+      </div>
+      <div class="layout-sidebar" id="layout-section-sidebar">
+        <Sidebar />
+      </div>
+      <div class="layout-grid-section" id="layout-section-grid">
+        <TransmitterGrid />
+      </div>
+    </div>
   </main>
 
   <Footer />
 
   <DetailModal />
   <SettingsModal />
-  <AboutModal /> <!-- <-- AGREGADO -->
+  <AboutModal />
+  <LayoutModal />
 
   <script>
     // Astro compila esto como módulo ES y lo enlaza automáticamente al final

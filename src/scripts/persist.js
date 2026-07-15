@@ -15,6 +15,7 @@
 
 const CONFIG_KEY = 'smpt:config:v1';
 const THEME_KEY = 'smpt:theme:v1';
+const LAYOUT_KEY = 'smpt:layout:v1';
 
 function safeGet(key) {
   try {
@@ -70,4 +71,23 @@ export function loadConfig() {
   } catch {
     return {};
   }
+}
+
+// Preferencias de disposición de la página (qué secciones se ven y cómo se
+// acomodan el mapa/panel lateral/cuadrícula). Ver src/scripts/layout-prefs.js
+// para la lógica que las aplica. Devuelve null si no hay nada guardado
+// todavía (primera visita) o si el JSON está corrupto, para que quien la
+// llame use sus propios valores por defecto.
+export function loadLayoutPrefs() {
+  const raw = safeGet(LAYOUT_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function saveLayoutPrefs(prefs) {
+  safeSet(LAYOUT_KEY, JSON.stringify(prefs));
 }
