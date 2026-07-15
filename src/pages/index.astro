@@ -52,23 +52,39 @@ const lastUpdate = new Date().toLocaleTimeString('es-MX', {
   <Header />
 
   <main id="main-layout">
-    <!-- Dashboard de métricas globales -->
-    <div id="layout-section-dashboard">
-      <DashboardStats
-        client:load
-        total={initialMetrics.total}
-        lastUpdate={lastUpdate}
-      />
-    </div>
+    <div class="layout-grid" id="layout-grid">
+      <!-- Dashboard de métricas globales -->
+      <div class="layout-section" id="layout-section-dashboard" data-layout-key="dashboard">
+        <div class="layout-drag-handle" draggable="false" data-layout-handle="dashboard" title="Arrastrar para reacomodar">
+          <span class="layout-drag-grip" aria-hidden="true">⠿</span>
+          <span class="layout-drag-label">Panel de métricas</span>
+        </div>
+        <DashboardStats
+          client:load
+          total={initialMetrics.total}
+          lastUpdate={lastUpdate}
+        />
+      </div>
 
-    <div class="layout-grid">
-      <div class="layout-map" id="layout-section-map">
+      <div class="layout-map layout-section" id="layout-section-map" data-layout-key="map">
+        <div class="layout-drag-handle" draggable="false" data-layout-handle="map" title="Arrastrar para reacomodar">
+          <span class="layout-drag-grip" aria-hidden="true">⠿</span>
+          <span class="layout-drag-label">Mapa</span>
+        </div>
         <MapPanel />
       </div>
-      <div class="layout-sidebar" id="layout-section-sidebar">
+      <div class="layout-sidebar layout-section" id="layout-section-sidebar" data-layout-key="sidebar">
+        <div class="layout-drag-handle" draggable="false" data-layout-handle="sidebar" title="Arrastrar para reacomodar">
+          <span class="layout-drag-grip" aria-hidden="true">⠿</span>
+          <span class="layout-drag-label">Panel lateral</span>
+        </div>
         <Sidebar />
       </div>
-      <div class="layout-grid-section" id="layout-section-grid">
+      <div class="layout-grid-section layout-section" id="layout-section-grid" data-layout-key="grid">
+        <div class="layout-drag-handle" draggable="false" data-layout-handle="grid" title="Arrastrar para reacomodar">
+          <span class="layout-drag-grip" aria-hidden="true">⠿</span>
+          <span class="layout-drag-label">Transmisores</span>
+        </div>
         <TransmitterGrid />
       </div>
     </div>

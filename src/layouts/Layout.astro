@@ -9,6 +9,7 @@ import '../styles/map.css';
 import '../styles/sidebar.css';
 import '../styles/cards.css';
 import '../styles/modal.css';
+import '../styles/layout-edit.css';
 import '../styles/footer.css';
 import '../styles/responsive.css';
 import '../styles/about.css';
@@ -89,19 +90,53 @@ const ogImage = Astro.site ? new URL(`${baseUrl}logo-schrtyc.png`, Astro.site).t
 
       try {
         var layout = JSON.parse(localStorage.getItem('smpt:layout:v1') || 'null');
+        var order = ['dashboard', 'map', 'sidebar', 'grid'];
+        var visible = { dashboard: true, map: true, sidebar: true, grid: true };
+
         if (layout) {
-          if (layout.arrangement === 'grid-side') {
-            document.documentElement.setAttribute('data-arrangement', 'grid-side');
+          if (Array.isArray(layout.order)) {
+            var seen = {};
+            var cleaned = [];
+            layout.order.forEach(function (key) {
+              if (order.indexOf(key) === -1 || seen[key]) return;
+              seen[key] = true;
+              cleaned.push(key);
+            });
+            order.forEach(function (key) { if (!seen[key]) cleaned.push(key); });
+            order = cleaned;
           }
           if (layout.visible) {
-            var hidden = [];
-            ['dashboard', 'map', 'sidebar', 'grid'].forEach(function (key) {
-              if (layout.visible[key] === false) hidden.push(key);
+            order.forEach(function (key) {
+              if (layout.visible[key] === false) visible[key] = false;
             });
-            if (hidden.length) {
-              document.documentElement.setAttribute('data-hidden-sections', hidden.join(' '));
+          }
+        }
+
+        order.forEach(function (key, index) {
+          document.documentElement.setAttribute('data-order-' + key, String(index));
+        });
+
+        // De "sidebar"/"grid" (las únicas que pueden ir junto al mapa),
+        // la primera visible en el orden guardado es la que queda angosta
+        // al lado del mapa — ver computeCompanion() en layout-prefs.js,
+        // esta es la misma regla duplicada aquí porque este script corre
+        // antes de que el módulo esté disponible.
+        var companion = 'none';
+        if (visible.map) {
+          for (var i = 0; i < order.length; i++) {
+            var key = order[i];
+            if ((key === 'sidebar' || key === 'grid') && visible[key] !== false) {
+              companion = key;
+              break;
             }
           }
+        }
+        document.documentElement.setAttribute('data-companion', companion);
+
+        var hidden = [];
+        order.forEach(function (key) { if (visible[key] === false) hidden.push(key); });
+        if (hidden.length) {
+          document.documentElement.setAttribute('data-hidden-sections', hidden.join(' '));
         }
       } catch (e) {}
     })();

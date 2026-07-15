@@ -22,6 +22,21 @@ export function resizeCardCharts() {
   Object.values(cardChartInstances).forEach((chart) => chart?.resize());
 }
 
+// Cuando la cuadrícula está angosta junto al mapa (modo compacto, ver
+// map.css), usar columnas de ancho automático (auto-fill) llena primero
+// todo lo ancho disponible antes de bajar de fila — con pocas columnas
+// posibles eso da UNA fila larga en vez de aprovechar la altura libre.
+// En su lugar se fija un número de columnas cercano a la raíz cuadrada del
+// total de transmisores, para que la cuadrícula se vea como una matriz
+// más o menos cuadrada (p. ej. 11 transmisores → 4 columnas, 3 filas)
+// aunque la última fila quede incompleta.
+function updateCompactGridColumns() {
+  const grid = document.getElementById('grid');
+  if (!grid) return;
+  const cols = Math.max(2, Math.ceil(Math.sqrt(state.length)));
+  grid.style.setProperty('--compact-cols', String(cols));
+}
+
 function buildCardSkeleton(tx) {
   const card = document.createElement('div');
   card.id = `card-${tx.id}`;
@@ -115,6 +130,8 @@ function updateCardData(tx, s) {
 export function renderGrid() {
   const grid = document.getElementById('grid');
   if (!grid) return;
+
+  updateCompactGridColumns();
 
   let ok = 0, warn = 0, crit = 0;
 

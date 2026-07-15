@@ -1,8 +1,15 @@
 ---
-// Ventana de "Disposición de la página". El contenido lo genera
-// layout-modal.js (ver openLayoutModal) — aquí solo va el contenedor y el
-// fondo/overlay, igual que el resto de los modales del proyecto.
+// Ventana de "Secciones visibles" (contenido generado por layout-modal.js,
+// ver openLayoutModal) y la barra flotante del modo de edición por
+// arrastre (ver layout-dnd.js) — se muestran juntas porque ambas dependen
+// del mismo botón "Disposición de la página" del encabezado.
 ---
 <div class="overlay" id="layout-overlay">
   <div class="detail" id="layout-modal-content"></div>
+</div>
+
+<div class="layout-edit-toolbar" id="layout-edit-toolbar">
+  <span>Arrastra el ⠿ de cada sección para reacomodarla</span>
+  <button type="button" id="layout-edit-visibility-btn">Secciones visibles</button>
+  <button type="button" class="primary" id="layout-edit-done-btn">Listo</button>
 </div>

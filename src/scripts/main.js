@@ -17,7 +17,8 @@ import { initDashboard } from './dashboard.js';
 import { openAbout } from './about.js';
 import { registerServiceWorker } from './pwa.js';
 import { initLayout } from './layout-prefs.js';
-import { openLayoutModal, closeLayoutModal } from './layout-modal.js';
+import { closeLayoutModal } from './layout-modal.js';
+import { initLayoutDnd } from './layout-dnd.js';
 
 // El HTML generado por eventos.js (bitácora) y map.js (clusters) usa
 // onclick="openDetail(id)" como texto plano, así que necesita existir en window.
@@ -45,7 +46,11 @@ setTheme(loadTheme() || 'light');
 wireThemeButtons();
 
 document.getElementById('about-btn')?.addEventListener('click', openAbout);
-document.getElementById('layout-btn')?.addEventListener('click', openLayoutModal);
+
+// El botón de disposición ahora activa el modo de edición (arrastrar
+// secciones) en vez de abrir directamente la ventana de "secciones
+// visibles" — ver layout-dnd.js.
+initLayoutDnd();
 
 // Preferencia de disposición guardada en una sesión anterior (qué secciones
 // se ven y cómo se acomodan) — se aplica antes de renderizar el resto para

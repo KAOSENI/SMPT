@@ -1,0 +1,150 @@
+/* MODO DE EDICIÓN DE DISPOSICIÓN (arrastrar y soltar) */
+/* Ver src/scripts/layout-dnd.js para la lógica; aquí solo el aspecto
+   visual. Todo esto permanece oculto (display:none / pointer-events:none)
+   hasta que <html> tiene la clase "layout-editing", que se activa desde el
+   botón de disposición en el encabezado. */
+
+.layout-drag-handle {
+  display: none;
+}
+
+html.layout-editing .layout-section {
+  position: relative;
+  outline: 1px dashed var(--panel-line);
+  outline-offset: 6px;
+  border-radius: 8px;
+  transition: outline-color 0.15s ease;
+}
+
+/* Mientras se arrastra una sección, deshabilita los clics dentro de ella
+   (tarjetas, mapa, botones) para que no se abran modales ni el mapa
+   capture el gesto — solo debe importar el arrastre. */
+html.layout-editing .layout-section > :not(.layout-drag-handle) {
+  pointer-events: none;
+}
+
+html.layout-editing .layout-drag-handle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin-bottom: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--panel-line);
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  width: fit-content;
+}
+
+.layout-drag-handle:active {
+  cursor: grabbing;
+}
+
+.layout-drag-grip {
+  font-size: 14px;
+  color: var(--phosphor-dim);
+  line-height: 1;
+}
+
+/* Sección que se está arrastrando en este momento. */
+.layout-section.layout-dragging {
+  opacity: 0.35;
+}
+
+/* Fantasma que sigue al puntero mientras se arrastra (clon del contenido
+   del handle: grip + nombre de la sección). position:fixed + left/top
+   actualizados en cada pointermove desde layout-dnd.js; translate(-50%,-50%)
+   centra el fantasma justo debajo del dedo/cursor. */
+.layout-drag-ghost {
+  position: fixed;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--panel);
+  border: 1px solid var(--phosphor);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(-2deg);
+  transition: transform 0.08s ease;
+}
+
+/* Sección que quedaría debajo del puntero si se soltara ahora: no solo un
+   contorno, también un color de fondo (igual que el resto de "esto se
+   puede soltar aquí" del resto de la app) para que sea obvio a distancia,
+   sin tener que fijarse en el borde. */
+.layout-section.layout-drop-target {
+  outline: 2px solid var(--phosphor);
+  outline-offset: 6px;
+  background: rgba(74, 108, 247, 0.08);
+  box-shadow: 0 0 0 4px rgba(74, 108, 247, 0.06);
+}
+
+.layout-edit-toolbar {
+  display: none;
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 60;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  max-width: calc(100vw - 32px);
+}
+
+html.layout-editing .layout-edit-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.layout-edit-toolbar button {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--panel-line);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.layout-edit-toolbar button:hover {
+  border-color: var(--phosphor-dim);
+  color: var(--phosphor);
+}
+
+.layout-edit-toolbar button.primary {
+  background: var(--phosphor);
+  border-color: var(--phosphor);
+  color: #fff;
+}
+
+@media (max-width: 480px) {
+  .layout-edit-toolbar {
+    left: 16px;
+    right: 16px;
+    bottom: 12px;
+    transform: none;
+  }
+}

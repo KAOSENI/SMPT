@@ -30,43 +30,101 @@
 .layout-map {
   flex: 0 1 clamp(320px, 46vw, 540px);
   min-width: 0;
+  order: 1;
 }
 
 .layout-sidebar {
   flex: 1 1 340px;
   min-width: 0;
+  order: 2;
 }
 
-/* A todo lo ancho por defecto (fuerza su propia fila, debajo de mapa+sidebar). */
+/* A todo lo ancho por defecto (fuerza su propia fila). */
 .layout-grid-section {
   flex: 1 1 100%;
   min-width: 0;
+  order: 3;
 }
 
-/* Preferencia "cuadrícula al lado del mapa": la cuadrícula de transmisores
-   toma el lugar del panel lateral (junto al mapa), y el panel lateral pasa
-   a su propia fila, a todo lo ancho. El atributo vive en <html> (no en
-   <main>) porque lo aplica un script inline en el <head>, antes de que
-   <main> exista, para evitar un flash del acomodo por defecto — ver
-   Layout.astro. */
-html[data-arrangement="grid-side"]:not([data-hidden-sections~="map"]) .layout-grid-section {
-  flex: 1 1 400px;
-  /* La cuadrícula puede tener muchas más filas de tarjetas que lo que mide
-     el mapa de alto (que es fijo, 1:1). En vez de dejar que se salga por
-     debajo del mapa sin control, se acota a la misma altura (misma fórmula
-     que define el lado del mapa) y se vuelve desplazable por dentro. Este
-     tope solo tiene sentido si el mapa sigue visible al lado — si se
-     oculta, la cuadrícula recupera su altura libre (ver regla siguiente). */
-  max-height: clamp(320px, 46vw, 540px);
-  overflow-y: auto;
+#layout-section-dashboard {
+  flex: 1 1 100%;
+  min-width: 0;
+  order: 0;
 }
 
-html[data-arrangement="grid-side"][data-hidden-sections~="map"] .layout-grid-section {
+/* ORDEN VISUAL: cada sección se puede arrastrar a cualquier posición (ver
+   layout-dnd.js). El resultado se guarda como índice 0-3 por sección en
+   data-order-<sección> sobre <html> — igual que data-hidden-sections, vive
+   ahí (no en cada elemento) porque lo aplica un script inline en el <head>
+   antes de que <main> exista, para evitar un flash del orden por defecto. */
+html[data-order-dashboard="0"] #layout-section-dashboard { order: 0; }
+html[data-order-dashboard="1"] #layout-section-dashboard { order: 1; }
+html[data-order-dashboard="2"] #layout-section-dashboard { order: 2; }
+html[data-order-dashboard="3"] #layout-section-dashboard { order: 3; }
+
+html[data-order-map="0"] #layout-section-map { order: 0; }
+html[data-order-map="1"] #layout-section-map { order: 1; }
+html[data-order-map="2"] #layout-section-map { order: 2; }
+html[data-order-map="3"] #layout-section-map { order: 3; }
+
+html[data-order-sidebar="0"] #layout-section-sidebar { order: 0; }
+html[data-order-sidebar="1"] #layout-section-sidebar { order: 1; }
+html[data-order-sidebar="2"] #layout-section-sidebar { order: 2; }
+html[data-order-sidebar="3"] #layout-section-sidebar { order: 3; }
+
+html[data-order-grid="0"] #layout-section-grid { order: 0; }
+html[data-order-grid="1"] #layout-section-grid { order: 1; }
+html[data-order-grid="2"] #layout-section-grid { order: 2; }
+html[data-order-grid="3"] #layout-section-grid { order: 3; }
+
+/* TAMAÑO: el mapa es de ancho fijo (cuadrado). De panel lateral / cuadrícula
+   de transmisores, cuál de las dos queda angosta junto al mapa ("companion")
+   y cuál pasa a su propia fila a todo lo ancho lo decide data-companion,
+   calculado a partir del orden guardado (ver computeCompanion en
+   layout-prefs.js). Si el mapa está oculto, ninguna de las dos se angosta:
+   ambas pasan a ancho completo. */
+html[data-companion="sidebar"] #layout-section-sidebar { flex: 1 1 340px; }
+html[data-companion="sidebar"] #layout-section-grid { flex: 1 1 100%; }
+
+html[data-companion="grid"] #layout-section-grid { flex: 1 1 340px; }
+html[data-companion="grid"] #layout-section-sidebar { flex: 1 1 100%; }
+
+html[data-companion="none"] #layout-section-sidebar,
+html[data-companion="none"] #layout-section-grid {
   flex: 1 1 100%;
 }
 
-html[data-arrangement="grid-side"] .layout-sidebar {
-  flex: 1 1 100%;
+/* La cuadrícula, angosta junto al mapa, puede tener muchas más tarjetas de
+   las que caben en la altura del mapa. En vez de recortarla con scroll
+   interno, las tarjetas se encogen (columnas más angostas, se ocultan la
+   mini-gráfica y el detalle secundario) para que quepan todas sin necesidad
+   de desplazarse — el detalle completo de cada transmisor sigue disponible
+   con solo darle clic a la tarjeta. Solo aplica en pantallas donde en
+   verdad hay una fila mapa+cuadrícula lado a lado (ver responsive.css: en
+   móvil todo se apila a ancho completo y no hace falta encoger nada). */
+@media (min-width: 769px) {
+  html[data-companion="grid"] #layout-section-grid .grid {
+    grid-template-columns: repeat(var(--compact-cols, 4), 1fr);
+    gap: 6px;
+  }
+  html[data-companion="grid"] #layout-section-grid .card { padding: 8px 9px; }
+  html[data-companion="grid"] #layout-section-grid .card-top { margin-bottom: 4px; }
+  html[data-companion="grid"] #layout-section-grid .tx-name { font-size: 11px; margin: 0; }
+  html[data-companion="grid"] #layout-section-grid .tx-freq { display: none; }
+  html[data-companion="grid"] #layout-section-grid .meter-row { display: none; }
+  html[data-companion="grid"] #layout-section-grid .meter-track { margin-bottom: 6px; }
+  html[data-companion="grid"] #layout-section-grid .card-graph-container { display: none; }
+  html[data-companion="grid"] #layout-section-grid .card-status-reason { display: none; }
+  html[data-companion="grid"] #layout-section-grid .card-status-text { margin-top: 4px; font-size: 8px; }
+  html[data-companion="grid"] #layout-section-grid .dot { width: 6px; height: 6px; }
+
+  /* Red de seguridad: si algún día hay muchísimos más transmisores y ni
+     así caben, se recorta con scroll interno en vez de romper el layout —
+     pero con la cantidad actual de transmisores esto no debería activarse. */
+  html[data-companion="grid"] #layout-section-grid {
+    max-height: clamp(320px, 46vw, 540px);
+    overflow-y: auto;
+  }
 }
 
 /* Secciones ocultas por preferencia del usuario — mismo criterio: el
