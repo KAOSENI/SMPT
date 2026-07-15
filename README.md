@@ -7,8 +7,8 @@
 **Panel de monitoreo en tiempo real para los 11 transmisores del Sistema Chiapaneco de Radio, Televisión y Cinematografía.**
 
 [![Deploy to GitHub Pages](https://img.shields.io/github/actions/workflow/status/KAOSENI/SMPT/main.yml?branch=main&label=deploy&logo=github)](https://github.com/KAOSENI/SMPT/actions/workflows/main.yml)
-[![Versión](https://img.shields.io/badge/versi%C3%B3n-0.7.5-0a6e4b)](https://github.com/KAOSENI/SMPT/commits/main)
-[![Astro](https://img.shields.io/badge/Astro-%5E7.0.7-BC52EE?logo=astro&logoColor=white)](https://astro.build)
+[![Versión](https://img.shields.io/github/package-json/v/KAOSENI/SMPT?label=versi%C3%B3n&color=0a6e4b)](https://github.com/KAOSENI/SMPT/commits/main)
+[![Astro](https://img.shields.io/badge/Astro-7.0.7-BC52EE?logo=astro&logoColor=white)](https://astro.build)
 [![Licencia](https://img.shields.io/github/license/KAOSENI/SMPT)](./LICENSE)
 
 **[Ver en producción](https://kaoseni.github.io/SMPT/)**
@@ -59,11 +59,11 @@ cada apartado por separado y desplegarlo automáticamente en GitHub Pages.
 
 | Tecnología | Uso en el proyecto |
 |---|---|
-| **[Astro](https://astro.build/)** `^7.0.7` | Framework del sitio: componentes `.astro`, generación estática (SSG) para GitHub Pages. |
+| **[Astro](https://astro.build/)** | Framework del sitio: componentes `.astro`, generación estática (SSG) para GitHub Pages. |
 | **JavaScript (ESM)** | Toda la lógica de la app (`src/scripts/*.js`), en módulos resueltos por Astro/Vite. |
 | **TypeScript (modo estricto)** | Chequeo de tipos en los `.astro` y en `src/env.d.ts` (declaraciones globales de `window`). |
-| **[ECharts](https://echarts.apache.org/)** `^6.1.0` | Todas las gráficas: mini-históricos de tarjeta, gráficas de detalle, gauge/dona del panel lateral. |
-| **[Lucide (@lucide/astro)](https://lucide.dev/)** `^1.24.0` | Iconografía SVG en los componentes `.astro`. |
+| **[ECharts](https://echarts.apache.org/)** | Todas las gráficas: mini-históricos de tarjeta, gráficas de detalle, gauge/dona del panel lateral. |
+| **[Lucide (@lucide/astro)](https://lucide.dev/)** | Iconografía SVG en los componentes `.astro`. |
 | **CSS puro** | Sin framework de estilos; un archivo por apartado en `src/styles/*.css`. |
 | **SVG a mano** | Contorno de Chiapas en el mapa, sin librería de mapas externa. |
 | **Service Worker** (Vanilla, sin librerías) | Cachea recursos sobre la marcha para que el panel cargue instalado/offline. Ver `public/sw.js`. |
