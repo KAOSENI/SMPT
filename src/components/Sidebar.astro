@@ -105,12 +105,34 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     <div class="stats-body">
       <div class="stats-row">
         <div class="stats-item">
-          <div class="stats-item-label">Disponibilidad</div>
-          <div class="stats-item-value" id="stats-availability">64%</div>
-          <div class="stats-item-bar">
-            <div class="stats-item-bar-fill" id="stats-availability-bar" style="width: 64%;"></div>
+          <div class="stats-item-label">Diagnóstico del sistema</div>
+          <div class="stats-summary">
+            <div class="stats-summary-item">
+              <span>Origen de los datos</span>
+              <strong id="stats-data-source">Simulado en el navegador</strong>
+            </div>
+            <div class="stats-summary-item">
+              <span>Estado de conexión</span>
+              <strong id="stats-connection"><span class="stats-status-dot ok-dot" id="stats-connection-dot"></span> En línea</strong>
+            </div>
           </div>
         </div>
+        <div class="stats-item">
+          <div class="stats-item-label">Confiabilidad de la red</div>
+          <div class="stats-summary">
+            <div class="stats-summary-item">
+              <span>Potencia total autorizada</span>
+              <strong id="stats-total-power">—</strong>
+            </div>
+            <div class="stats-summary-item">
+              <span>Tiempo acumulado en alerta (sesión)</span>
+              <strong id="stats-degraded-time">—</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-row">
         <div class="stats-item">
           <div class="stats-item-label">Distribución por banda</div>
           <div class="stats-band">
@@ -122,45 +144,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
             </span>
           </div>
         </div>
-      </div>
-
-      <div class="stats-row">
-        <div class="stats-item">
-          <div class="stats-item-label">Estado de transmisores</div>
-          <div class="stats-status-grid">
-            <div class="stats-status-item ok-bg">
-              <span class="stats-status-dot ok-dot"></span>
-              <span class="stats-status-label">Operativos</span>
-              <span class="stats-status-value" id="stats-ok">0</span>
-            </div>
-            <div class="stats-status-item warn-bg">
-              <span class="stats-status-dot warn-dot"></span>
-              <span class="stats-status-label">Advertencia</span>
-              <span class="stats-status-value" id="stats-warn">0</span>
-            </div>
-            <div class="stats-status-item crit-bg">
-              <span class="stats-status-dot crit-dot"></span>
-              <span class="stats-status-label">Críticos</span>
-              <span class="stats-status-value" id="stats-crit">0</span>
-            </div>
-          </div>
-        </div>
-        <div class="stats-item">
-          <div class="stats-item-label">Resumen</div>
-          <div class="stats-summary">
-            <div class="stats-summary-item">
-              <span>Total transmisores</span>
-              <strong id="stats-total">11</strong>
-            </div>
-            <div class="stats-summary-item">
-              <span>Última actualización</span>
-              <strong id="stats-last-update">--:--:--</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="stats-row">
         <div class="stats-item">
           <div class="stats-item-label">Promedios de la red</div>
           <div class="stats-summary">
@@ -178,17 +161,18 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
             </div>
           </div>
         </div>
-        <div class="stats-item">
-          <div class="stats-item-label">Alimentación y equipos</div>
-          <div class="stats-summary">
-            <div class="stats-summary-item">
-              <span>Fases eléctricas caídas</span>
-              <strong id="stats-phase-down">—</strong>
-            </div>
-            <div class="stats-summary-item">
-              <span>Equipos instalados apagados</span>
-              <strong id="stats-equip-off">—</strong>
-            </div>
+      </div>
+
+      <div class="stats-item">
+        <div class="stats-item-label">Alimentación y equipos</div>
+        <div class="stats-summary">
+          <div class="stats-summary-item">
+            <span>Fases eléctricas caídas</span>
+            <strong id="stats-phase-down">—</strong>
+          </div>
+          <div class="stats-summary-item">
+            <span>Equipos instalados apagados</span>
+            <strong id="stats-equip-off">—</strong>
           </div>
         </div>
       </div>
@@ -204,6 +188,7 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
                 <th>Potencia</th>
                 <th>ROE</th>
                 <th>Temp.</th>
+                <th>T. en alerta</th>
                 <th>Motivo</th>
               </tr>
             </thead>
@@ -218,6 +203,8 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
 <script>
   import { state } from '../scripts/state.js';
   import { statusOf, statusReasons } from '../scripts/status.js';
+  import { STATIONS } from '../scripts/data/stations.js';
+  import { onSplashReady } from '../scripts/splash-ready.js';
 
   // ============================================================
   // FUNCIONES DE ESTADO
@@ -302,46 +289,65 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   // ACTUALIZACIÓN DEL MODAL
   // ============================================================
 
+  // ms -> texto legible ("0s", "45s", "3m 12s", "1h 05m"). Se usa para el
+  // tiempo acumulado en advertencia/crítico (por transmisor y en total).
+  function formatDuration(ms: number): string {
+    if (!ms || ms < 1000) return '0s';
+    const totalSeconds = Math.floor(ms / 1000);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
+    if (m > 0) return `${m}m ${String(s).padStart(2, '0')}s`;
+    return `${s}s`;
+  }
+
+  function updateConnectionStatus(): void {
+    const label = document.getElementById('stats-connection');
+    const dot = document.getElementById('stats-connection-dot');
+    if (!label || !dot) return;
+    const online = navigator.onLine;
+    label.lastChild!.textContent = online ? ' En línea' : ' Sin conexión';
+    dot.className = `stats-status-dot ${online ? 'ok-dot' : 'crit-dot'}`;
+  }
+
+  // El estado de conexión no depende del tick de la simulación — se
+  // actualiza al instante si el navegador pierde/recupera la red, sin
+  // esperar a que el modal se vuelva a refrescar.
+  window.addEventListener('online', updateConnectionStatus);
+  window.addEventListener('offline', updateConnectionStatus);
+
   function updateStatsModal(): void {
     try {
-      const counts = getStatusCounts();
       const total = state.length;
       const fm = parseInt(document.getElementById('sidebar-fm')?.textContent || '0') || 0;
       const am = parseInt(document.getElementById('sidebar-am')?.textContent || '0') || 0;
-      const availability = getAvailability();
 
-      const elements = {
-        availability: document.getElementById('stats-availability'),
-        availabilityBar: document.getElementById('stats-availability-bar'),
-        fm: document.getElementById('stats-fm'),
-        am: document.getElementById('stats-am'),
-        ok: document.getElementById('stats-ok'),
-        warn: document.getElementById('stats-warn'),
-        crit: document.getElementById('stats-crit'),
-        total: document.getElementById('stats-total'),
-        lastUpdate: document.getElementById('stats-last-update')
-      };
-      
-      if (elements.availability) {
-        elements.availability.textContent = availability + '%';
-      }
-      
-      if (elements.availabilityBar) {
-        elements.availabilityBar.style.width = availability + '%';
-      }
-      
-      if (elements.fm) elements.fm.textContent = String(fm);
-      if (elements.am) elements.am.textContent = String(am);
-      if (elements.ok) elements.ok.textContent = String(counts.ok);
-      if (elements.warn) elements.warn.textContent = String(counts.warn);
-      if (elements.crit) elements.crit.textContent = String(counts.crit);
-      if (elements.total) elements.total.textContent = String(total);
+      const fmEl = document.getElementById('stats-fm');
+      if (fmEl) fmEl.textContent = String(fm);
+      const amEl = document.getElementById('stats-am');
+      if (amEl) amEl.textContent = String(am);
 
-      if (elements.lastUpdate) {
-        elements.lastUpdate.textContent = new Date().toLocaleTimeString('es-MX', {
-          hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-        });
+      updateConnectionStatus();
+
+      // Potencia total autorizada — dato real de infraestructura (no
+      // simulado); no todas las estaciones tienen potencia registrada
+      // todavía, así que se aclara sobre cuántas sí.
+      const withPower = STATIONS.filter((s) => typeof s.powerKW === 'number');
+      const totalKW = withPower.reduce((sum, s) => sum + (s.powerKW || 0), 0);
+      const totalPowerEl = document.getElementById('stats-total-power');
+      if (totalPowerEl) {
+        totalPowerEl.textContent = withPower.length
+          ? `${totalKW.toFixed(1)} kW (${withPower.length} de ${total} con dato registrado)`
+          : 'Sin datos registrados';
       }
+
+      // Tiempo acumulado en advertencia/crítico, sumado en toda la red
+      // durante esta sesión — ver TICK_INTERVAL_MS en tick.js, que es
+      // donde se va acumulando tx.degradedMs en cada ciclo.
+      const totalDegradedMs = state.reduce((sum, tx) => sum + (tx.degradedMs || 0), 0);
+      const degradedEl = document.getElementById('stats-degraded-time');
+      if (degradedEl) degradedEl.textContent = formatDuration(totalDegradedMs);
 
       // Promedios de la red — dan una lectura de conjunto que los conteos
       // ok/warn/crit por sí solos no muestran (p. ej. la red puede estar
@@ -401,6 +407,7 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
               <td>${tx.power.toFixed(0)}%</td>
               <td>${tx.vswr.toFixed(2)}:1</td>
               <td>${tx.temp.toFixed(1)}°C</td>
+              <td>${formatDuration(tx.degradedMs || 0)}</td>
               <td class="stats-table-reason">${reasons.join(' · ')}</td>
             </tr>`;
         }).join('');
@@ -420,6 +427,21 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   // ============================================================
 
   async function initSidebarCharts(): Promise<void> {
+    // Ya inicializado — no volver a crear instancias de ECharts encima de
+    // las mismas. window.initSidebarCharts se expone para que
+    // layout-prefs.js pueda llamarla cada vez que cambia la disposición
+    // (incluida esta sección volviéndose visible después de estar oculta);
+    // este guard evita duplicar instancias en las llamadas de más.
+    if (window._gaugeChart) return;
+
+    // Igual que en grid.js: si el usuario ocultó el panel lateral, su
+    // contenedor mide 0×0 de forma permanente mientras siga oculto —
+    // inicializar ECharts ahora solo generaría advertencias sin beneficio.
+    // Se sale sin hacer nada; en cuanto vuelva a mostrarse, layout-prefs.js
+    // vuelve a llamar a esta función.
+    const hiddenSections = (document.documentElement.getAttribute('data-hidden-sections') || '').split(' ');
+    if (hiddenSections.includes('sidebar')) return;
+
     try {
       const echarts = await import('echarts');
       (window as any)._echartsLib = echarts;
@@ -617,6 +639,10 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   window.openStatsModal = openStatsModal;
   window.closeStatsModal = closeStatsModal;
   window.__refreshStatsModal = refreshStatsModalIfOpen;
+  // Para que layout-prefs.js pueda volver a llamarla cuando el panel
+  // lateral pasa de oculto a visible (ver el guard al inicio de la
+  // función y la explicación en grid.js/renderGrid()).
+  window.initSidebarCharts = initSidebarCharts;
 
   // ============================================================
   // CONFIGURACIÓN DE EVENTOS
@@ -659,10 +685,16 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   // INICIALIZACIÓN
   // ============================================================
 
+  // Igual que renderGrid() en main.js: se difiere hasta que el splash de
+  // carga (ver SplashScreen.astro) termina su tiempo mínimo en pantalla
+  // (~0.9s) — de sobra para que el navegador ya haya terminado de resolver
+  // el layout antes de que ECharts intente medir el contenedor (si no,
+  // clientWidth/clientHeight pueden leer 0 en ese instante, aunque el
+  // layout final sea correcto).
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSidebarCharts);
+    document.addEventListener('DOMContentLoaded', () => onSplashReady(initSidebarCharts));
   } else {
-    initSidebarCharts();
+    onSplashReady(initSidebarCharts);
   }
 
   // ============================================================
@@ -741,6 +773,17 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.02);
     transform: scale(0.92) translateY(10px);
     transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  /* En desktop se ensancha bastante más que los otros modales (que llegan a
+     900px): esta ventana además de las tarjetas resumen trae una tabla de
+     7 columnas (estado, transmisor, potencia, ROE, temp., tiempo en
+     alerta, motivo) — con 620px esa tabla queda apretada o con scroll
+     horizontal. */
+  @media (min-width: 860px) {
+    #stats-overlay .stats-modal {
+      max-width: 1040px;
+    }
   }
 
   #stats-overlay.is-open .stats-modal {
@@ -822,27 +865,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     font-weight: 500;
   }
 
-  #stats-overlay .stats-item-value {
-    font-size: 24px;
-    font-weight: 700;
-    font-family: var(--mono, monospace);
-    margin-bottom: 6px;
-  }
-
-  #stats-overlay .stats-item-bar {
-    height: 4px;
-    background: var(--panel-line, #e5e7eb);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  #stats-overlay .stats-item-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--phosphor, #3b82f6), var(--phosphor-dim, #60a5fa));
-    border-radius: 2px;
-    transition: width 0.6s ease;
-  }
-
   #stats-overlay .stats-band {
     display: flex;
     flex-direction: column;
@@ -871,30 +893,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     background: #8b5cf6;
   }
 
-  #stats-overlay .stats-status-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 6px;
-  }
-
-  #stats-overlay .stats-status-item {
-    padding: 8px 10px;
-    border-radius: 6px;
-    text-align: center;
-  }
-
-  #stats-overlay .stats-status-item.ok-bg {
-    background: rgba(34, 197, 94, 0.1);
-  }
-
-  #stats-overlay .stats-status-item.warn-bg {
-    background: rgba(234, 179, 8, 0.1);
-  }
-
-  #stats-overlay .stats-status-item.crit-bg {
-    background: rgba(239, 68, 68, 0.1);
-  }
-
   #stats-overlay .stats-status-dot {
     width: 8px;
     height: 8px;
@@ -913,19 +911,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
 
   #stats-overlay .stats-status-dot.crit-dot {
     background: #ef4444;
-  }
-
-  #stats-overlay .stats-status-label {
-    font-size: 11px;
-    color: var(--text-dim, #6b7280);
-  }
-
-  #stats-overlay .stats-status-value {
-    display: block;
-    font-size: 18px;
-    font-weight: 700;
-    font-family: var(--mono, monospace);
-    margin-top: 2px;
   }
 
   #stats-overlay .stats-summary {
@@ -1032,10 +1017,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   
   @media (max-width: 640px) {
     #stats-overlay .stats-row {
-      grid-template-columns: 1fr;
-    }
-    
-    #stats-overlay .stats-status-grid {
       grid-template-columns: 1fr;
     }
     

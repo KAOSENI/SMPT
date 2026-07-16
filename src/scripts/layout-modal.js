@@ -8,6 +8,7 @@
 
 import { getLayoutPrefs, setSectionVisible } from './layout-prefs.js';
 import { showToast } from './toast.js';
+import { loadToastsEnabled, saveToastsEnabled } from './persist.js';
 
 const SECTION_LABELS = {
   dashboard: { name: 'Panel de métricas', sub: 'Resumen de KPIs arriba de la página' },
@@ -56,6 +57,15 @@ function render(content) {
 
     <div>${visibilityRows}</div>
 
+    <p class="section-title" style="margin-top:18px;">Notificaciones</p>
+    <div class="equip-row">
+      <div class="equip-name">Notificaciones emergentes<span class="sub">Avisos como cambios de estado o "configuración guardada", abajo a la derecha</span></div>
+      <label class="switch">
+        <input type="checkbox" ${loadToastsEnabled() ? 'checked' : ''} id="toasts-enabled-input">
+        <span class="slider"></span>
+      </label>
+    </div>
+
     <p style="font-family:var(--mono); font-size:11px; color:var(--text-dim); margin:14px 0 0; padding:8px 10px; background:var(--surface-2); border:1px solid var(--panel-line); border-radius:5px;">
       Para reacomodar el orden de las secciones, arrastra el ⠿ de cada una directamente en la página.
       Esta preferencia se guarda solo en este navegador — no la ven otras personas que abran el sitio.
@@ -63,6 +73,9 @@ function render(content) {
   `;
 
   document.getElementById('layout-close-btn').addEventListener('click', closeLayoutModal);
+  document.getElementById('toasts-enabled-input')?.addEventListener('change', (e) => {
+    saveToastsEnabled(e.target.checked);
+  });
 
   content.querySelectorAll('[data-layout-visible]').forEach((input) => {
     input.addEventListener('change', () => {

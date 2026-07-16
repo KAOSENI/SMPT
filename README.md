@@ -25,6 +25,7 @@
 - [Requisitos](#requisitos)
 - [Uso local](#uso-local)
 - [Qué archivo tocar para cada cosa](#qué-archivo-tocar-para-cada-cosa)
+- [Disposición de la página](#disposición-de-la-página)
 - [Persistencia de datos](#persistencia-de-datos)
 - [PWA e instalación](#pwa-e-instalación)
 - [Desplegar en GitHub Pages](#desplegar-en-github-pages)
@@ -45,14 +46,17 @@ cada apartado por separado y desplegarlo automáticamente en GitHub Pages.
 | Apartado | Descripción |
 |---|---|
 | **Mapa interactivo** | Ubicación real de los 11 transmisores sobre el contorno de Chiapas, con zoom y arrastre. |
-| **Cuadrícula de transmisores** | Tarjetas con mini-gráficas de historial en vivo por transmisor. |
+| **Cuadrícula de transmisores** | Tarjetas con mini-gráficas de historial en vivo por transmisor; se comprimen automáticamente (menos detalle, más columnas) solo si de verdad no caben todas a tamaño completo en el espacio disponible. |
 | **Panel de detalle** | Métricas, alimentación eléctrica, cadena de equipos, eventos e historial — layout de 2 columnas en pantallas anchas. |
 | **Panel de configuración** | Umbrales de alerta, monitoreo de fase eléctrica, equipos instalados, con opción de restablecer valores por defecto. |
 | **Panel lateral** | Disponibilidad de red (gauge), distribución de estados (dona) y bitácora de eventos. |
-| **Notificaciones** | Avisos tipo *toast* para cambios de estado relevantes. |
+| **Estadísticas detalladas** | Ventana aparte con lo que no cabe en la barra lateral: promedios de la red, potencia total autorizada, tiempo acumulado en advertencia/crítico por sesión, diagnóstico de conexión, y una tabla completa de los 11 transmisores ordenada por severidad. |
+| **Disposición de la página configurable** | Arrastra y suelta las secciones (mapa, panel lateral, cuadrícula, métricas) a tu gusto, y oculta las que no necesites — con retroalimentación visual (atenuado + resaltado de color) mientras arrastras. |
+| **Notificaciones** | Avisos tipo *toast* para cambios de estado relevantes, en la esquina inferior derecha; se pueden desactivar por completo desde la disposición de la página. |
 | **Ventana "Acerca de"** | Explicación de términos técnicos, siglas y créditos del proyecto. |
+| **Splash de carga** | Logo del sistema al abrir la página (~1s), tiempo que además usa la app para terminar de resolver el layout antes de montar las gráficas. |
 | **Temas de color** | Claro / Fósforo / Oscuro, sin flash al cargar la página. |
-| **Persistencia local** | La configuración (umbrales, fases, equipos, tema) sobrevive a un refresh o a cerrar y volver a abrir el sitio. |
+| **Persistencia local** | La configuración (umbrales, fases, equipos, tema, disposición de la página, notificaciones) sobrevive a un refresh o a cerrar y volver a abrir el sitio. |
 | **PWA real** | Instalable en escritorio/móvil (`site.webmanifest` + favicon completo) y disponible sin conexión mediante *service worker* (`public/sw.js`). |
 
 ## Tecnologías utilizadas
@@ -105,6 +109,9 @@ apartado vive en su propio archivo:
 | Notificaciones tipo *toast* | `src/scripts/toast.js` |
 | La ventana "Acerca de" | `src/scripts/about.js`, `src/components/AboutModal.astro`, `src/styles/about.css` |
 | La bitácora de eventos / resumen del panel lateral | `src/scripts/events.js` |
+| La ventana "Estadísticas detalladas" | `src/components/Sidebar.astro` (HTML + script del modal) |
+| Qué secciones se pueden ver/ocultar y cómo se acomodan (arrastrar y soltar) | `src/scripts/layout-prefs.js` (estado y persistencia), `src/scripts/layout-dnd.js` (arrastrar y soltar), `src/scripts/layout-modal.js` + `src/components/LayoutModal.astro` (panel de secciones visibles/notificaciones), `src/styles/layout-edit.css` (aspecto visual del modo edición) |
+| La pantalla de carga (splash) al abrir la página | `src/components/SplashScreen.astro`, `src/scripts/splash-ready.js` |
 | El panel de estadísticas/KPIs globales del dashboard | `src/scripts/dashboard.js`, `src/components/DashboardStats.astro` |
 | Las gráficas de histórico | `src/scripts/charts.js` |
 | La simulación en vivo (qué tan rápido cambian los datos) | `src/scripts/tick.js` |
@@ -126,19 +133,36 @@ en `src/scripts/main.js`, con comentarios explicando cada import.
 > `charts.js`, conviene respetar esa separación para no reintroducir el
 > parpadeo.
 
+## Disposición de la página
+
+Cada sección principal (mapa, panel lateral, cuadrícula de transmisores,
+panel de métricas) se puede **ocultar** y **reordenar arrastrándola**
+directamente en la página, usando el ícono de arrastre (⠿) de cada una.
+Se accede desde el botón de disposición en el encabezado.
+
+Mientras arrastras, la sección de origen se atenúa y se marca con línea
+punteada del color del tema activo; la sección donde quedaría al soltar se
+resalta con color — para que siempre quede claro qué se está moviendo y
+dónde caería. Debe quedar al menos una sección visible: si intentas ocultar
+la última, se revierte con un aviso.
+
+Esta preferencia (igual que el tema y la configuración de cada transmisor)
+se guarda en `localStorage` — ver [Persistencia de datos](#persistencia-de-datos).
+
 ## Persistencia de datos
 
 La configuración que ajustas a mano en la ventana de **Configuración**
-(umbrales, monitoreo de fase, equipos instalados/encendidos) y el tema
-visual elegido se guardan en `localStorage` del navegador (`src/scripts/persist.js`),
-identificados por el indicativo de cada transmisor. Así sobreviven a un
-refresh de página o a cerrar y volver a abrir el sitio.
+(umbrales, monitoreo de fase, equipos instalados/encendidos), el tema
+visual, la **disposición de la página** (qué secciones se ven y cómo están
+acomodadas) y si las **notificaciones** están activadas se guardan en
+`localStorage` del navegador (`src/scripts/persist.js`). Así sobreviven a
+un refresh de página o a cerrar y volver a abrir el sitio.
 
 Los valores simulados en vivo (potencia, ROE, temperatura, histórico,
-uptime, eventos) **no se guardan a propósito**: son demostrativos y cada
-sesión arranca con una simulación fresca. Si en el futuro se conecta un
-servidor real con telemetría, esa sería la fuente de verdad de esos datos,
-no `localStorage`.
+uptime, eventos, tiempo acumulado en advertencia/crítico de la sesión)
+**no se guardan a propósito**: son demostrativos y cada sesión arranca con
+una simulación fresca. Si en el futuro se conecta un servidor real con
+telemetría, esa sería la fuente de verdad de esos datos, no `localStorage`.
 
 ## PWA e instalación
 

@@ -35,6 +35,11 @@ export const state = STATIONS.map((s, i) => {
     config: { phaseMonitoring: 2 },
     equipment: equipment,
     _lastStatus: null,
+    // Tiempo acumulado (ms) que este transmisor ha pasado en advertencia o
+    // crítico durante ESTA sesión — no se guarda entre sesiones a propósito,
+    // igual que el resto de los valores simulados en vivo (ver persist.js).
+    // Se usa en el modal de Estadísticas detalladas.
+    degradedMs: 0,
   };
 
   // Si este transmisor tiene configuración guardada de una sesión anterior,

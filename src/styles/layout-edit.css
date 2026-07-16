@@ -52,9 +52,14 @@ html.layout-editing .layout-drag-handle {
   line-height: 1;
 }
 
-/* Sección que se está arrastrando en este momento. */
+/* Sección que se está arrastrando en este momento: no solo atenuada — el
+   contorno también cambia al color del tema, para que quede claro CUÁL
+   sección está "pegada" al cursor (el fantasma que sigue al puntero es
+   pequeño y fácil de perder de vista si solo hay atenuación). */
 .layout-section.layout-dragging {
   opacity: 0.35;
+  outline-style: dashed;
+  outline-color: var(--phosphor);
 }
 
 /* Fantasma que sigue al puntero mientras se arrastra (clon del contenido
@@ -83,12 +88,17 @@ html.layout-editing .layout-drag-handle {
 /* Sección que quedaría debajo del puntero si se soltara ahora: no solo un
    contorno, también un color de fondo (igual que el resto de "esto se
    puede soltar aquí" del resto de la app) para que sea obvio a distancia,
-   sin tener que fijarse en el borde. */
+   sin tener que fijarse en el borde. Usa color-mix() con --phosphor (no un
+   color fijo) para que el resaltado sea siempre el color real del tema
+   activo — antes el fondo era un azul fijo que no combinaba con el
+   contorno en los temas Claro/Fósforo (donde --phosphor es verde/turquesa,
+   no azul), y el resultado se sentía apagado en vez de un resaltado claro. */
 .layout-section.layout-drop-target {
   outline: 2px solid var(--phosphor);
   outline-offset: 6px;
-  background: rgba(74, 108, 247, 0.08);
-  box-shadow: 0 0 0 4px rgba(74, 108, 247, 0.06);
+  background: color-mix(in srgb, var(--phosphor) 12%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--phosphor) 6%, transparent);
+  transition: outline-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .layout-edit-toolbar {

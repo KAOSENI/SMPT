@@ -13,6 +13,7 @@ import '../styles/layout-edit.css';
 import '../styles/footer.css';
 import '../styles/responsive.css';
 import '../styles/about.css';
+import SplashScreen from '../components/SplashScreen.astro';
 
 interface Props {
   title?: string;
@@ -143,6 +144,7 @@ const ogImage = Astro.site ? new URL(`${baseUrl}logo-schrtyc.png`, Astro.site).t
   </script>
 </head>
 <body>
+  <SplashScreen />
   <slot />
 </body>
 </html>

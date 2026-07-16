@@ -1,12 +1,4 @@
 // src/scripts/grid.js
-//
-// Misma idea que en detail.js: la tarjeta de cada transmisor se separa en
-// "cascarón" (se crea una sola vez, incluida la gráfica) y "datos" (se
-// actualizan cada tick). Antes, `card.innerHTML = ...` reescribía la tarjeta
-// COMPLETA —incluida la mini-gráfica de historial— en cada tick, forzando a
-// las 11 gráficas a destruirse y recrearse cada 1.5s. Ahora la gráfica es una
-// instancia viva de ECharts que solo recibe datos nuevos con setOption().
-
 import { state } from './state.js';
 import { statusOf, statusReasons } from './status.js';
 import { updateSidebarStats } from './events.js';
@@ -14,22 +6,63 @@ import { openDetail } from './detail.js';
 import { chartSkeletonHtml, mountLineChart, updateLineChart } from './charts.js';
 
 const cardChartInstances = {};
+let gridResizeObserver = null;
 
-// Llamado desde layout-prefs.js después de reacomodar la página: el
-// contenedor de cada mini-gráfica pudo haber cambiado de tamaño, y ECharts
-// no se reajusta solo — hay que pedírselo explícitamente.
+// Sincroniza el redibujado con el ciclo de renderizado del navegador
 export function resizeCardCharts() {
-  Object.values(cardChartInstances).forEach((chart) => chart?.resize());
+  requestAnimationFrame(() => {
+    // Un pequeño delay de 10ms garantiza que el DOM ya computó el ancho real de las tarjetas
+    setTimeout(() => {
+      Object.values(cardChartInstances).forEach((chart) => {
+        if (chart) {
+          chart.resize();
+        }
+      });
+    }, 10);
+  });
 }
 
-// Cuando la cuadrícula está angosta junto al mapa (modo compacto, ver
-// map.css), usar columnas de ancho automático (auto-fill) llena primero
-// todo lo ancho disponible antes de bajar de fila — con pocas columnas
-// posibles eso da UNA fila larga en vez de aprovechar la altura libre.
-// En su lugar se fija un número de columnas cercano a la raíz cuadrada del
-// total de transmisores, para que la cuadrícula se vea como una matriz
-// más o menos cuadrada (p. ej. 11 transmisores → 4 columnas, 3 filas)
-// aunque la última fila quede incompleta.
+function initResizeObserver(section) {
+  if (gridResizeObserver) {
+    gridResizeObserver.disconnect();
+  }
+  
+  gridResizeObserver = new ResizeObserver(() => {
+    updateCompactMode();
+  });
+  
+  gridResizeObserver.observe(section);
+}
+
+export function updateCompactMode() {
+  const section = document.getElementById('layout-section-grid');
+  const gridContainer = document.getElementById('grid');
+  if (!section || !gridContainer) return;
+
+  const isCompanion = document.documentElement.getAttribute('data-companion') === 'grid';
+  if (!isCompanion) {
+    section.classList.remove('grid-compact');
+    resizeCardCharts();
+    return;
+  }
+
+  section.classList.remove('grid-compact');
+  
+  const overflowing = gridContainer.scrollHeight > gridContainer.clientHeight;
+  section.classList.toggle('grid-compact', overflowing);
+  
+  // Forzamos la sincronización de tamaño de los gráficos
+  resizeCardCharts();
+}
+
+let compactResizeTimeout = null;
+window.addEventListener('resize', () => {
+  clearTimeout(compactResizeTimeout);
+  compactResizeTimeout = setTimeout(() => {
+    updateCompactMode();
+  }, 50);
+});
+
 function updateCompactGridColumns() {
   const grid = document.getElementById('grid');
   if (!grid) return;
@@ -55,7 +88,7 @@ function buildCardSkeleton(tx) {
     <div class="meter-row"><span title="Porcentaje de la potencia nominal del transmisor">Potencia actual</span><span id="power-val-${tx.id}">—</span></div>
     <div class="meter-track"><div class="meter-fill" id="meter-${tx.id}" style="width:0%;"></div></div>
 
-    <div class="card-graph-container" style="margin: 10px 0;">
+    <div class="card-graph-container">
       ${chartSkeletonHtml(`card-chart-${tx.id}`, 'Historial de potencia')}
     </div>
 
@@ -78,49 +111,40 @@ function updateCardData(tx, s) {
   const fmtPct = (val) => val.toFixed(0) + '%';
   const reasons = s === 'ok' ? [] : statusReasons(tx);
 
-  const dot = document.getElementById(`dot-${tx.id}`);
+  const dot = document.getElementById('dot-' + tx.id);
   if (dot) dot.className = `dot dot-${s}`;
 
-  const powerVal = document.getElementById(`power-val-${tx.id}`);
+  const powerVal = document.getElementById('power-val-' + tx.id);
   if (powerVal) powerVal.textContent = tx.power.toFixed(0) + '%';
 
-  const meter = document.getElementById(`meter-${tx.id}`);
+  const meter = document.getElementById('meter-' + tx.id);
   if (meter) {
     meter.style.width = tx.power + '%';
     meter.style.background = s === 'crit' ? 'var(--red)' : s === 'warn' ? 'var(--amber)' : 'var(--phosphor)';
   }
 
-  const statusText = document.getElementById(`status-text-${tx.id}`);
+  const statusText = document.getElementById('status-text-' + tx.id);
   if (statusText) {
     statusText.className = `card-status-text txt-${s}`;
     statusText.textContent = s === 'ok' ? 'Operando con normalidad' : s === 'warn' ? 'Requiere revisión' : 'Alarma activa';
   }
 
-  // Motivo específico (ROE, temperatura, potencia, fase o equipo) por el
-  // que se disparó la advertencia/crítico — así no hay que abrir el
-  // detalle solo para saber qué está mal.
-  const statusReason = document.getElementById(`status-reason-${tx.id}`);
+  const statusReason = document.getElementById('status-reason-' + tx.id);
   if (statusReason) {
-    statusReason.textContent = reasons.join(' · ');
-    statusReason.style.display = reasons.length ? '' : 'none';
+    // Si no hay errores, inyectamos un espacio en blanco no rompible (\u00A0)
+    // para forzar a que el elemento mantenga su altura física intacta en el DOM.
+    statusReason.textContent = reasons.length ? reasons.join(' · ') : '\u00A0';
+    // Se cambia de display a visibility para ocultar/mostrar sin destruir la caja estructural
+    statusReason.style.visibility = reasons.length ? 'visible' : 'hidden';
   }
 
-  // Describe la tarjeta completa para lectores de pantalla (equivalente a lo
-  // que ya se ve en pantalla: nombre, estado, motivo y potencia actual) y
-  // refuerza visualmente que la tarjeta es interactiva.
-  const card = document.getElementById(`card-${tx.id}`);
+  const card = document.getElementById('card-' + tx.id);
   if (card) {
     const statusLabel = s === 'ok' ? 'operando con normalidad' : s === 'warn' ? 'en advertencia' : 'en estado crítico';
     const reasonSuffix = reasons.length ? ` (${reasons.join(', ')})` : '';
     card.setAttribute('aria-label', `${tx.shortName}, ${statusLabel}${reasonSuffix}, potencia ${tx.power.toFixed(0)} por ciento. Abrir detalle.`);
   }
 
-  // La gráfica se monta UNA vez (cuando el contenedor ya existe en el DOM)
-  // y de ahí en adelante solo se le actualizan los datos. Usa el mismo
-  // histórico real (tx.history.power) que el panel de detalle, y el umbral
-  // que de verdad está configurado para este transmisor — así la mini-gráfica
-  // siempre es coherente con el medidor de arriba, en vez de una animación
-  // decorativa sin relación con el valor mostrado.
   if (!cardChartInstances[tx.id]) {
     cardChartInstances[tx.id] = mountLineChart(`card-chart-${tx.id}`);
   }
@@ -130,6 +154,14 @@ function updateCardData(tx, s) {
 export function renderGrid() {
   const grid = document.getElementById('grid');
   if (!grid) return;
+
+  const section = document.getElementById('layout-section-grid');
+  if (section) {
+    initResizeObserver(section);
+  }
+
+  const hiddenSections = (document.documentElement.getAttribute('data-hidden-sections') || '').split(' ');
+  if (hiddenSections.includes('grid')) return;
 
   updateCompactGridColumns();
 
@@ -155,4 +187,5 @@ export function renderGrid() {
   if (critEl) critEl.textContent = crit;
 
   updateSidebarStats();
+  updateCompactMode();
 }

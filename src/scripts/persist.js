@@ -16,6 +16,7 @@
 const CONFIG_KEY = 'smpt:config:v1';
 const THEME_KEY = 'smpt:theme:v1';
 const LAYOUT_KEY = 'smpt:layout:v1';
+const TOASTS_KEY = 'smpt:toasts-enabled:v1';
 
 function safeGet(key) {
   try {
@@ -90,4 +91,15 @@ export function loadLayoutPrefs() {
 
 export function saveLayoutPrefs(prefs) {
   safeSet(LAYOUT_KEY, JSON.stringify(prefs));
+}
+
+// Notificaciones emergentes (toast) — activadas por defecto. Se guarda
+// como texto '0'/'1' en vez de JSON porque es un valor único y simple.
+export function loadToastsEnabled() {
+  const raw = safeGet(TOASTS_KEY);
+  return raw !== '0'; // por defecto activado si no hay nada guardado
+}
+
+export function saveToastsEnabled(enabled) {
+  safeSet(TOASTS_KEY, enabled ? '1' : '0');
 }

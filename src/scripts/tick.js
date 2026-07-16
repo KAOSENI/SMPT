@@ -14,6 +14,12 @@ import { updateDashboard, calculateMetrics } from './dashboard.js';
 // Importar statusOf para calcular estados
 import { statusOf } from './status.js';
 
+// Duración de cada tick en milisegundos. Se exporta desde aquí (en vez de
+// tenerla hardcodeada por separado en main.js) para que el cálculo de
+// "tiempo acumulado en advertencia/crítico" siempre coincida exactamente
+// con la frecuencia real de la simulación.
+export const TICK_INTERVAL_MS = 1500;
+
 export function pushHistory(tx) {
   ['power', 'vswr', 'temp'].forEach(k => {
     tx.history[k].push(tx[k]);
@@ -29,6 +35,12 @@ export function tick() {
     tx.vswr = Math.max(1.0, tx.vswr + rand(-0.05, 0.05));
     tx.temp = Math.max(25, tx.temp + rand(-1.5, 1.5));
     pushHistory(tx);
+
+    // Confiabilidad: cada tick que este transmisor pasa fuera de "ok" suma
+    // a su tiempo acumulado en advertencia/crítico de la sesión. Ver
+    // Sidebar.astro (modal de Estadísticas detalladas).
+    if (statusOf(tx) !== 'ok') tx.degradedMs = (tx.degradedMs || 0) + TICK_INTERVAL_MS;
+
     const changed = checkStatusChange(tx.id);
     if (changed) statusChanged = true;
   });

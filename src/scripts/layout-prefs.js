@@ -20,7 +20,7 @@
 // Ver src/styles/map.css para las reglas CSS que consumen estos atributos.
 
 import { loadLayoutPrefs, saveLayoutPrefs } from './persist.js';
-import { resizeCardCharts } from './grid.js';
+import { resizeCardCharts, updateCompactMode, renderGrid } from './grid.js';
 
 const SECTION_KEYS = ['dashboard', 'map', 'sidebar', 'grid'];
 
@@ -104,9 +104,22 @@ export function applyLayout() {
   // Los contenedores de las gráficas pudieron cambiar de tamaño al
   // reacomodar la página — ECharts no se reajusta solo ante eso, así que
   // se le pide explícitamente después de que el CSS termine de aplicarse.
+  // updateCompactMode() también necesita ese mismo respiro: recién ahí
+  // "data-companion" ya quedó aplicado y el layout terminó de asentarse.
+  //
+  // renderGrid() e initSidebarCharts() se llaman aquí también porque son
+  // las mismas funciones que montan las gráficas la primera vez — ambas
+  // ya revisan si su sección está oculta (y no hacen nada si lo está) y
+  // ya son seguras de llamar de más (no duplican instancias), así que
+  // llamarlas en cada cambio de disposición, sin rastrear a mano si hubo
+  // una transición oculto→visible, resuelve automáticamente el caso de
+  // "el usuario vuelve a mostrar una sección que antes estaba oculta".
   setTimeout(() => {
     window.dispatchEvent(new Event('resize'));
     resizeCardCharts();
+    updateCompactMode();
+    renderGrid();
+    window.initSidebarCharts?.();
   }, 50);
 }
 

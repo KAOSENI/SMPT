@@ -1,9 +1,15 @@
 // src/scripts/toast.js
 // Sistema simple de notificaciones para feedback visual
 
+import { loadToastsEnabled } from './persist.js';
+
 let toastTimeout = null;
 
 export function showToast(message, type = 'info') {
+  // El usuario puede desactivar las notificaciones desde "Disposición de
+  // la página" (ver layout-modal.js) — por defecto están activadas.
+  if (!loadToastsEnabled()) return;
+
   // Remover toast existente
   const existing = document.querySelector('.toast-notification');
   if (existing) {

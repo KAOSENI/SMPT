@@ -977,8 +977,7 @@
 .toast-notification {
   position: fixed;
   bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 24px;
   background: var(--panel);
   border: 1px solid var(--panel-line);
   border-radius: 8px;
@@ -1011,11 +1010,11 @@
 @keyframes toastIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(20px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
   }
 }
 
@@ -1033,6 +1032,13 @@
    ================================================================ */
 
 @media (max-width: 600px) {
+  .toast-notification {
+    left: 16px;
+    right: 16px;
+    max-width: none;
+    text-align: center;
+  }
+
   .detail-metrics-grid {
     grid-template-columns: 1fr 1fr;
     gap: 6px;
@@ -1127,4 +1133,3 @@
     font-size: 10px;
   }
 }
-

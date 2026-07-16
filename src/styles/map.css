@@ -1,23 +1,4 @@
 /* MAPA + SIDEBAR + CUADRÍCULA */
-/* Flexbox en vez de CSS Grid con áreas fijas a propósito: con grid, si se
-   oculta una sección (p. ej. el panel lateral), la columna que le
-   correspondía queda reservada y vacía — el mapa no la ocupa solo. Con
-   flexbox, al desaparecer un elemento (display:none), los demás se
-   reacomodan y expanden automáticamente para llenar el espacio libre, sin
-   tener que calcular a mano cada combinación posible de secciones
-   visibles/ocultas.
-   align-items:flex-start (no "stretch") es igual de intencional: evita que
-   el mapa (siempre cuadrado) se estire para igualar la altura de un
-   contenido más alto al lado (como la cuadrícula de 11 transmisores), que
-   es justo lo que se veía mal antes. */
-/* justify-content:center es la pieza clave para "cuando un componente
-   principal queda solo en su fila, se centra en vez de quedarse pegado a
-   la izquierda con espacio vacío al lado". Con sidebar/grid-section (que
-   tienen flex-grow:1) no cambia nada, porque ya consumen todo el espacio
-   libre disponible — el centrado solo entra en juego cuando el que queda
-   solo es el mapa (flex-grow:0, tamaño fijo por su relación de aspecto
-   1:1), sin necesitar una regla por cada combinación posible de secciones
-   visibles/ocultas. */
 .layout-grid {
   display: flex;
   flex-wrap: wrap;
@@ -25,11 +6,14 @@
   justify-content: center;
   gap: 20px;
   margin-bottom: 28px;
+  width: 100%;
 }
 
 .layout-map {
-  flex: 0 1 clamp(320px, 46vw, 540px);
-  min-width: 0;
+  flex: 0 0 540px; /* MAPA FIJO: Mantiene su tamaño estricto de 540px sin deformarse */
+  width: 540px;
+  height: 540px;
+  min-width: 540px;
   order: 1;
 }
 
@@ -52,11 +36,7 @@
   order: 0;
 }
 
-/* ORDEN VISUAL: cada sección se puede arrastrar a cualquier posición (ver
-   layout-dnd.js). El resultado se guarda como índice 0-3 por sección en
-   data-order-<sección> sobre <html> — igual que data-hidden-sections, vive
-   ahí (no en cada elemento) porque lo aplica un script inline en el <head>
-   antes de que <main> exista, para evitar un flash del orden por defecto. */
+/* ORDEN VISUAL */
 html[data-order-dashboard="0"] #layout-section-dashboard { order: 0; }
 html[data-order-dashboard="1"] #layout-section-dashboard { order: 1; }
 html[data-order-dashboard="2"] #layout-section-dashboard { order: 2; }
@@ -77,16 +57,16 @@ html[data-order-grid="1"] #layout-section-grid { order: 1; }
 html[data-order-grid="2"] #layout-section-grid { order: 2; }
 html[data-order-grid="3"] #layout-section-grid { order: 3; }
 
-/* TAMAÑO: el mapa es de ancho fijo (cuadrado). De panel lateral / cuadrícula
-   de transmisores, cuál de las dos queda angosta junto al mapa ("companion")
-   y cuál pasa a su propia fila a todo lo ancho lo decide data-companion,
-   calculado a partir del orden guardado (ver computeCompanion en
-   layout-prefs.js). Si el mapa está oculto, ninguna de las dos se angosta:
-   ambas pasan a ancho completo. */
+/* TAMAÑOS COMPANION */
 html[data-companion="sidebar"] #layout-section-sidebar { flex: 1 1 340px; }
 html[data-companion="sidebar"] #layout-section-grid { flex: 1 1 100%; }
 
-html[data-companion="grid"] #layout-section-grid { flex: 1 1 340px; }
+/* CORRECCIÓN DE FLUIDEZ JUNTO AL MAPA FIJO DE 540px */
+html[data-companion="grid"] #layout-section-grid { 
+  flex: 1 1 300px; 
+  min-width: 0; 
+  overflow-x: hidden;
+}
 html[data-companion="grid"] #layout-section-sidebar { flex: 1 1 100%; }
 
 html[data-companion="none"] #layout-section-sidebar,
@@ -94,47 +74,152 @@ html[data-companion="none"] #layout-section-grid {
   flex: 1 1 100%;
 }
 
-/* La cuadrícula, angosta junto al mapa, puede tener muchas más tarjetas de
-   las que caben en la altura del mapa. En vez de recortarla con scroll
-   interno, las tarjetas se encogen (columnas más angostas, se ocultan la
-   mini-gráfica y el detalle secundario) para que quepan todas sin necesidad
-   de desplazarse — el detalle completo de cada transmisor sigue disponible
-   con solo darle clic a la tarjeta. Solo aplica en pantallas donde en
-   verdad hay una fila mapa+cuadrícula lado a lado (ver responsive.css: en
-   móvil todo se apila a ancho completo y no hace falta encoger nada). */
 @media (min-width: 769px) {
-  html[data-companion="grid"] #layout-section-grid .grid {
-    grid-template-columns: repeat(var(--compact-cols, 4), 1fr);
-    gap: 6px;
-  }
-  html[data-companion="grid"] #layout-section-grid .card { padding: 8px 9px; }
-  html[data-companion="grid"] #layout-section-grid .card-top { margin-bottom: 4px; }
-  html[data-companion="grid"] #layout-section-grid .tx-name { font-size: 11px; margin: 0; }
-  html[data-companion="grid"] #layout-section-grid .tx-freq { display: none; }
-  html[data-companion="grid"] #layout-section-grid .meter-row { display: none; }
-  html[data-companion="grid"] #layout-section-grid .meter-track { margin-bottom: 6px; }
-  html[data-companion="grid"] #layout-section-grid .card-graph-container { display: none; }
-  html[data-companion="grid"] #layout-section-grid .card-status-reason { display: none; }
-  html[data-companion="grid"] #layout-section-grid .card-status-text { margin-top: 4px; font-size: 8px; }
-  html[data-companion="grid"] #layout-section-grid .dot { width: 6px; height: 6px; }
-
-  /* Red de seguridad: si algún día hay muchísimos más transmisores y ni
-     así caben, se recorta con scroll interno en vez de romper el layout —
-     pero con la cantidad actual de transmisores esto no debería activarse. */
+  /* ACOPLE VERTICAL AL MAPA DE 540px */
   html[data-companion="grid"] #layout-section-grid {
-    max-height: clamp(320px, 46vw, 540px);
+    height: 540px;
+    max-height: 540px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  html[data-companion="grid"] #layout-section-grid #grid {
+    flex: 1 1 0;
     overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 8px;
+    display: grid; /* Forzamos comportamiento grid para controlar distribución */
+  }
+
+  html[data-companion="grid"] #layout-section-grid .meter-row,
+  html[data-companion="grid"] #layout-section-grid .meter-track {
+    display: none;
+  }
+
+  /* DISEÑO COMPACTO DISTRIBUIDO (OCUPA EL 100% DE LA ALTURA DEL MAPA) */
+  #layout-section-grid.grid-compact .grid {
+    grid-template-columns: repeat(var(--compact-cols, 4), 1fr);
+    grid-auto-rows: 1fr; /* DISTRIBUCIÓN EQUITATIVA: hace que cada fila tome una fracción igual del alto */
+    gap: 8px;
+    height: 100%; /* Estira el grid para usar los 540px completos */
+    box-sizing: border-box;
+  }
+  
+  #layout-section-grid.grid-compact .card { 
+    padding: 10px 12px;
+    height: 100%; /* Las tarjetas se estiran para llenar su celda del grid */
+    min-height: 110px; /* Mínimo de seguridad para conservar las gráficas */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  #layout-section-grid.grid-compact .card-top { 
+    margin-bottom: 4px; 
+  }
+  
+  #layout-section-grid.grid-compact .tx-name { 
+    font-size: 12px; 
+    font-weight: 600;
+    margin: 0; 
+  }
+  
+  #layout-section-grid.grid-compact .tx-freq { 
+    display: none; 
+  }
+  
+  /* LAS MINI GRÁFICAS SE MANTIENEN PRESENTES Y FLUIDAS */
+  #layout-section-grid.grid-compact .card-graph-container { 
+    flex: 1; /* Permite que la gráfica use el espacio intermedio dinámicamente */
+    height: 60px !important; 
+    margin: 4px 0 !important;
+    opacity: 1 !important;
+  }
+  
+  #layout-section-grid.grid-compact .card-status-reason { 
+    display: none; 
+  }
+  
+  #layout-section-grid.grid-compact .card-status-text { 
+    margin: 0; 
+    font-size: 9px; 
+    font-weight: 500;
+  }
+  
+  #layout-section-grid.grid-compact .dot { 
+    width: 8px; 
+    height: 8px; 
   }
 }
 
-/* Secciones ocultas por preferencia del usuario — mismo criterio: el
-   atributo vive en <html> para poder aplicarse antes del primer pintado. */
+/* DISEÑO VERTICAL DE LAS TARJETAS Y CONTENEDORES (MODO NORMAL) */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 220px;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--phosphor-dim);
+  transform: translateY(-2px);
+}
+
+.card-graph-container {
+  width: 100%;
+  height: 100px;
+  margin: 12px 0;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.15s ease, height 0.15s ease, margin 0.15s ease;
+}
+
+.card-graph-container > div {
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.card-graph-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+@media (max-width: 950px) {
+  .layout-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+  .layout-map {
+    margin: 0 auto;
+  }
+  html[data-companion="grid"] #layout-section-grid {
+    flex: 1 1 100%;
+    width: 100%;
+    max-height: none;
+    overflow-x: hidden;
+  }
+}
+
 html[data-hidden-sections~="dashboard"] #layout-section-dashboard { display: none; }
 html[data-hidden-sections~="map"] #layout-section-map { display: none; }
 html[data-hidden-sections~="sidebar"] #layout-section-sidebar { display: none; }
 html[data-hidden-sections~="grid"] #layout-section-grid { display: none; }
 
-/* Mapa estrictamente cuadrado (1:1) */
+/* Mapa strictly cuadrado (1:1) */
 #geo-map {
   background: var(--panel);
   border: 1px solid var(--panel-line);
@@ -143,9 +228,12 @@ html[data-hidden-sections~="grid"] #layout-section-grid { display: none; }
   overflow: visible;
   touch-action: none;
   position: relative;
-  aspect-ratio: 1/1;
   width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }
+
+/* Tooltip, leyenda y controles se mantienen intactos aquí abajo... */
 
 #geo-map .map-tooltip {
   position: absolute;

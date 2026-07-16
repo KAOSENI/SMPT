@@ -1,0 +1,86 @@
+---
+// Pantalla de carga breve al abrir la página: cubre el contenido con el
+// logo del sistema mientras el navegador termina de resolver el layout
+// (mapa, cuadrícula, gráficas). Sin esto, las gráficas de ECharts a veces
+// se montaban con su contenedor todavía en 0×0 (ver advertencias
+// "Can't get DOM width or height" en consola) porque se inicializaban
+// antes de que el layout terminara de asentarse — sobre todo notorio en
+// modo desarrollo, donde Vite inyecta el CSS vía JavaScript en vez de un
+// <link> que bloquee el render como sí pasa en producción. En vez de
+// perseguir el timing exacto con requestAnimationFrame, se le da a la
+// página un respiro fijo de ~1s antes de revelarse — para entonces el
+// layout (incluida la disposición guardada, que ya se aplica antes del
+// primer pintado — ver Layout.astro) tuvo tiempo de sobra para asentarse.
+//
+// El mapa, la cuadrícula y el resto siguen renderizándose normalmente
+// DETRÁS de esta pantalla (no están display:none — solo se ven tapados),
+// así que su layout se calcula con toda normalidad; el splash únicamente
+// los cubre a la vista hasta que termina.
+const base = import.meta.env.BASE_URL;
+const baseUrl = base.endsWith('/') ? base : `${base}/`;
+---
+
+<div id="splash-screen" aria-hidden="true">
+  <img src={`${baseUrl}logo-schrtyc.png`} alt="" />
+</div>
+
+<style>
+  #splash-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    transition: opacity 0.45s ease;
+  }
+
+  #splash-screen img {
+    width: min(160px, 40vw);
+    height: auto;
+    animation: splash-pulse 1.3s ease-in-out infinite;
+  }
+
+  #splash-screen.splash-hide {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @keyframes splash-pulse {
+    0%, 100% { opacity: 0.85; transform: scale(0.97); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #splash-screen img {
+      animation: none;
+    }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    window.__splashReady = false;
+
+    function reveal() {
+      // Se marca ANTES de disparar el evento: así, si algún script llega
+      // tarde a suscribirse (después de que esto ya corrió), puede
+      // simplemente revisar la bandera en vez de quedarse esperando un
+      // evento que ya pasó — ver src/scripts/splash-ready.js.
+      window.__splashReady = true;
+      window.dispatchEvent(new Event('splash-ready'));
+
+      var splash = document.getElementById('splash-screen');
+      if (!splash) return;
+      splash.classList.add('splash-hide');
+      setTimeout(function () {
+        splash.remove();
+      }, 500);
+    }
+
+    // ~0.9s mostrando el logo + ~0.45s de desvanecimiento = poco más de un
+    // segundo en total, tal como se pidió.
+    setTimeout(reveal, 900);
+  })();
+</script>

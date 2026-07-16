@@ -42,14 +42,15 @@ export function mountLineChart(containerId) {
 //
 // El texto junto al título NO muestra el valor actual (eso ya se ve en el
 // medidor/metric-box de arriba, mostrarlo dos veces es redundante) — muestra
-// el CAMBIO entre el primer y el último punto del historial visible, con
-// una flecha de tendencia. Es información que el medidor no da: hacia dónde
-// se está moviendo, no solo dónde está parado ahora mismo.
+// el CAMBIO respecto a la muestra anterior (un tick atrás, ~1.5s), con una
+// flecha de tendencia. Es información que el medidor no da: hacia dónde se
+// está moviendo justo ahora, no solo dónde está parado.
 export function updateLineChart(chart, containerId, values, thresholdValue, color, fmt) {
   if (!chart) return;
-  const first = values && values.length ? values[0] : 0;
-  const last = values && values.length ? values[values.length - 1] : 0;
-  const delta = last - first;
+  const len = values ? values.length : 0;
+  const last = len ? values[len - 1] : 0;
+  const prev = len > 1 ? values[len - 2] : last;
+  const delta = last - prev;
 
   const valueLabel = document.getElementById(`${containerId}-value`);
   if (valueLabel) {
@@ -58,7 +59,7 @@ export function updateLineChart(chart, containerId, values, thresholdValue, colo
     const deltaText = (typeof fmt === 'function') ? fmt(delta) : String(delta);
     valueLabel.textContent = `${arrow} ${sign}${deltaText}`;
     valueLabel.style.color = color;
-    valueLabel.title = 'Cambio respecto al inicio del historial visible';
+    valueLabel.title = 'Cambio respecto a la muestra anterior';
   }
 
   chart.setOption({
