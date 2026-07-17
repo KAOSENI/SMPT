@@ -74,8 +74,16 @@ html[data-companion="none"] #layout-section-grid {
   flex: 1 1 100%;
 }
 
-@media (min-width: 769px) {
-  /* ACOPLE VERTICAL AL MAPA DE 540px */
+@media (min-width: 951px) {
+  /* ACOPLE VERTICAL AL MAPA: el mapa es de tamaño FIJO (540px, ver
+     .layout-map arriba) — antes esto usaba clamp(320px, 46vw, 540px),
+     una fórmula relativa al ancho de pantalla que ya no tenía sentido una
+     vez que el mapa dejó de ser responsive; a la mayoría de anchos daba
+     un número distinto de 540 y por eso el panel de al lado no coincidía
+     con el mapa. También se alinea el punto de quiebre (951px) con el que
+     ya usa @media (max-width: 950px) más abajo para apilar todo en
+     vertical — antes eran 769px vs 950px, con una franja intermedia donde
+     ya se apilaba pero esta regla igual intentaba fijar una altura. */
   html[data-companion="grid"] #layout-section-grid {
     height: 540px;
     max-height: 540px;
@@ -88,13 +96,32 @@ html[data-companion="none"] #layout-section-grid {
     flex: 1 1 0;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-bottom: 8px;
     display: grid; /* Forzamos comportamiento grid para controlar distribución */
+    /* Por defecto, CSS Grid empaqueta las filas arriba (align-content:
+       start) y deja el resto del alto sin usar. Con space-between, si las
+       tarjetas no llenan los 516px disponibles, el espacio sobrante se
+       reparte ENTRE filas — la última fila siempre toca el fondo, que es
+       el borde inferior real del mapa (540px de contenedor - ~24px del
+       título "Transmisores" = 516px). Si el contenido sí llena o desborda
+       esos 516px, esta propiedad no tiene ningún efecto (ya se activa el
+       scroll de overflow-y arriba).
+       Sin padding-bottom a propósito: cualquier padding aquí adentro deja
+       un espacio antes del borde real, impidiendo que la última fila
+       toque exactamente el fondo (que es todo el punto de space-between). */
+    align-content: space-between;
   }
 
   html[data-companion="grid"] #layout-section-grid .meter-row,
   html[data-companion="grid"] #layout-section-grid .meter-track {
     display: none;
+  }
+
+  /* Mismo acople vertical cuando el companion del mapa es el panel
+     lateral (acomodo por defecto) en vez de la cuadrícula. */
+  html[data-companion="sidebar"] #layout-section-sidebar {
+    height: 540px;
+    max-height: 540px;
+    overflow-y: auto;
   }
 
   /* DISEÑO COMPACTO DISTRIBUIDO (OCUPA EL 100% DE LA ALTURA DEL MAPA) */

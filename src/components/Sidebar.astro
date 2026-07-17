@@ -209,13 +209,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   // ============================================================
   // FUNCIONES DE ESTADO
   // ============================================================
-  // Antes esto dependía de window.__APP_STATE__ (nunca se asignaba en
-  // ningún archivo del proyecto) o, si eso fallaba, releía el texto ya
-  // pintado en otros elementos del sidebar (frágil: si ese texto no se
-  // había actualizado todavía, se propagaba el valor viejo). Ahora se
-  // calcula una sola vez desde `state`, la misma fuente de verdad que usa
-  // el resto de la app (grid, mapa, tarjetas de detalle).
-
   function getStatusCounts(): { ok: number; warn: number; crit: number } {
     let ok = 0, warn = 0, crit = 0;
     state.forEach(tx => {
@@ -227,10 +220,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     return { ok, warn, crit };
   }
 
-  // Disponibilidad ponderada: ok=100%, warn=50%, crit=0% (mismo criterio
-  // que dashboard.js). Se calcula aquí también porque el gauge y el modal
-  // de estadísticas viven en este componente y necesitan el número real,
-  // no un valor leído (y a veces inexistente) de otro elemento del DOM.
   function getAvailability(): number {
     const { ok, warn, crit } = getStatusCounts();
     const total = ok + warn + crit;
@@ -250,10 +239,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   // ============================================================
   // FUNCIONES DEL MODAL
   // ============================================================
-
-  // Mientras el modal está abierto, se refresca en cada tick (ver el hook
-  // window.__refreshStatsModal más abajo, y tick.js). Antes solo se
-  // actualizaba una vez al abrirlo y se quedaba congelado.
   let statsModalOpen = false;
 
   function openStatsModal(): void {
@@ -288,9 +273,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   // ============================================================
   // ACTUALIZACIÓN DEL MODAL
   // ============================================================
-
-  // ms -> texto legible ("0s", "45s", "3m 12s", "1h 05m"). Se usa para el
-  // tiempo acumulado en advertencia/crítico (por transmisor y en total).
   function formatDuration(ms: number): string {
     if (!ms || ms < 1000) return '0s';
     const totalSeconds = Math.floor(ms / 1000);
@@ -311,9 +293,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     dot.className = `stats-status-dot ${online ? 'ok-dot' : 'crit-dot'}`;
   }
 
-  // El estado de conexión no depende del tick de la simulación — se
-  // actualiza al instante si el navegador pierde/recupera la red, sin
-  // esperar a que el modal se vuelva a refrescar.
   window.addEventListener('online', updateConnectionStatus);
   window.addEventListener('offline', updateConnectionStatus);
 
@@ -330,9 +309,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
 
       updateConnectionStatus();
 
-      // Potencia total autorizada — dato real de infraestructura (no
-      // simulado); no todas las estaciones tienen potencia registrada
-      // todavía, así que se aclara sobre cuántas sí.
       const withPower = STATIONS.filter((s) => typeof s.powerKW === 'number');
       const totalKW = withPower.reduce((sum, s) => sum + (s.powerKW || 0), 0);
       const totalPowerEl = document.getElementById('stats-total-power');
@@ -342,16 +318,10 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
           : 'Sin datos registrados';
       }
 
-      // Tiempo acumulado en advertencia/crítico, sumado en toda la red
-      // durante esta sesión — ver TICK_INTERVAL_MS en tick.js, que es
-      // donde se va acumulando tx.degradedMs en cada ciclo.
       const totalDegradedMs = state.reduce((sum, tx) => sum + (tx.degradedMs || 0), 0);
       const degradedEl = document.getElementById('stats-degraded-time');
       if (degradedEl) degradedEl.textContent = formatDuration(totalDegradedMs);
 
-      // Promedios de la red — dan una lectura de conjunto que los conteos
-      // ok/warn/crit por sí solos no muestran (p. ej. la red puede estar
-      // "toda en ok" pero con el ROE promedio subiendo poco a poco).
       const avgPower = state.reduce((sum, tx) => sum + tx.power, 0) / total;
       const avgVswr = state.reduce((sum, tx) => sum + tx.vswr, 0) / total;
       const avgTemp = state.reduce((sum, tx) => sum + tx.temp, 0) / total;
@@ -363,8 +333,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
       const avgTempEl = document.getElementById('stats-avg-temp');
       if (avgTempEl) avgTempEl.textContent = avgTemp.toFixed(1) + '°C';
 
-      // Fases eléctricas caídas — solo cuenta transmisores con monitoreo de
-      // fase configurado (los que no tienen, no aplican).
       let phaseDown = 0;
       state.forEach((tx) => {
         const pm = tx.config.phaseMonitoring;
@@ -376,7 +344,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
       const phaseDownEl = document.getElementById('stats-phase-down');
       if (phaseDownEl) phaseDownEl.textContent = String(phaseDown);
 
-      // Equipos instalados pero apagados, sumados en toda la red.
       let equipOff = 0;
       state.forEach((tx) => {
         Object.values(tx.equipment).forEach((eq: any) => {
@@ -386,9 +353,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
       const equipOffEl = document.getElementById('stats-equip-off');
       if (equipOffEl) equipOffEl.textContent = String(equipOff);
 
-      // Tabla completa, ordenada por severidad (crítico primero, luego
-      // advertencia, luego ok) para que los problemas queden arriba sin
-      // tener que buscarlos. Cada fila abre el detalle de ese transmisor.
       const severityRank: Record<string, number> = { crit: 0, warn: 1, ok: 2 };
       const rows = [...state].sort((a, b) => {
         const diff = severityRank[statusOf(a)] - severityRank[statusOf(b)];
@@ -415,9 +379,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     } catch {}
   }
 
-  // Se llama en cada tick (ver window.__refreshStatsModal más abajo) — pero
-  // solo hace trabajo real si el modal sigue abierto, igual que openDetail()/
-  // openSettings() en tick.js solo refrescan si su ventana está abierta.
   function refreshStatsModalIfOpen(): void {
     if (statsModalOpen) updateStatsModal();
   }
@@ -425,20 +386,9 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   // ============================================================
   // INICIALIZACIÓN DE GRÁFICAS
   // ============================================================
-
   async function initSidebarCharts(): Promise<void> {
-    // Ya inicializado — no volver a crear instancias de ECharts encima de
-    // las mismas. window.initSidebarCharts se expone para que
-    // layout-prefs.js pueda llamarla cada vez que cambia la disposición
-    // (incluida esta sección volviéndose visible después de estar oculta);
-    // este guard evita duplicar instancias en las llamadas de más.
     if (window._gaugeChart) return;
 
-    // Igual que en grid.js: si el usuario ocultó el panel lateral, su
-    // contenedor mide 0×0 de forma permanente mientras siga oculto —
-    // inicializar ECharts ahora solo generaría advertencias sin beneficio.
-    // Se sale sin hacer nada; en cuanto vuelva a mostrarse, layout-prefs.js
-    // vuelve a llamar a esta función.
     const hiddenSections = (document.documentElement.getAttribute('data-hidden-sections') || '').split(' ');
     if (hiddenSections.includes('sidebar')) return;
 
@@ -472,7 +422,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   // ============================================================
   // CUSTOM GAUGE
   // ============================================================
-
   function updateGaugeChart(): void {
     const chart = window._gaugeChart;
     if (!chart) return;
@@ -571,7 +520,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   // ============================================================
   // PIE DE ESTADO
   // ============================================================
-
   function updateStatusPie(ok: number, warn: number, crit: number): void {
     const chart = window._statusPie;
     if (!chart) return;
@@ -616,7 +564,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   // ============================================================
   // ACTUALIZACIÓN PRINCIPAL
   // ============================================================
-
   function updateBarsChart(): void {
     const counts = getStatusCounts();
     updateStatusPie(counts.ok, counts.warn, counts.crit);
@@ -629,7 +576,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     renderGaugeArc(chart, availability);
   }
 
-  // Exponer funciones globalmente
   window.updateBarsChart = updateBarsChart;
   window.updateStatusPie = updateStatusPie;
   window.updateSidebarGauge = updateSidebarGauge;
@@ -639,15 +585,11 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   window.openStatsModal = openStatsModal;
   window.closeStatsModal = closeStatsModal;
   window.__refreshStatsModal = refreshStatsModalIfOpen;
-  // Para que layout-prefs.js pueda volver a llamarla cuando el panel
-  // lateral pasa de oculto a visible (ver el guard al inicio de la
-  // función y la explicación en grid.js/renderGrid()).
   window.initSidebarCharts = initSidebarCharts;
 
   // ============================================================
   // CONFIGURACIÓN DE EVENTOS
   // ============================================================
-
   document.addEventListener('DOMContentLoaded', () => {
     const openBtn = document.getElementById('open-stats-btn');
     if (openBtn) {
@@ -684,13 +626,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   // ============================================================
   // INICIALIZACIÓN
   // ============================================================
-
-  // Igual que renderGrid() en main.js: se difiere hasta que el splash de
-  // carga (ver SplashScreen.astro) termina su tiempo mínimo en pantalla
-  // (~0.9s) — de sobra para que el navegador ya haya terminado de resolver
-  // el layout antes de que ECharts intente medir el contenedor (si no,
-  // clientWidth/clientHeight pueden leer 0 en ese instante, aunque el
-  // layout final sea correcto).
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => onSplashReady(initSidebarCharts));
   } else {
@@ -698,45 +633,23 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   }
 
   // ============================================================
-  // SIMETRÍA CON EL MAPA
-  // ============================================================
-
-  function setupStrictSimetry(): void {
-    const mapContainer = document.getElementById('geo-map');
-    const sidebarEl = document.querySelector('.sidebar');
-    if (!mapContainer || !(sidebarEl instanceof HTMLElement)) return;
-
-    const layoutObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (window.innerWidth > 1024) {
-          const exactHeight = entry.contentRect.height;
-          sidebarEl.style.height = `${exactHeight}px`;
-          sidebarEl.style.maxHeight = `${exactHeight}px`;
-          requestAnimationFrame(() => {
-            window._gaugeChart?.resize();
-            window._statusPie?.resize();
-          });
-        } else {
-          sidebarEl.style.height = 'auto';
-          sidebarEl.style.maxHeight = 'none';
-        }
-      }
-    });
-    layoutObserver.observe(mapContainer);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupStrictSimetry);
-  } else {
-    setupStrictSimetry();
-  }
+  // NOTA: la sincronización de altura del sidebar con el mapa ya NO se
+  // hace aquí. Vivía un ResizeObserver (setupStrictSimetry) que le ponía
+  // a .sidebar una altura en línea con !important — eso siempre gana
+  // sobre cualquier regla de una hoja de estilos, así que pisaba en
+  // silencio las reglas de map.css/layout-edit.css (el sistema
+  // data-companion: 540px fuera de edición, 578px durante edición) sin
+  // que se notara por qué. Esa altura además se calculaba mal (medía
+  // #geo-map en vez de la sección completa). El redimensionado de las
+  // gráficas (gauge/pie) tras un cambio de disposición sigue funcionando
+  // igual: ya hay un listener de 'resize' más abajo, y layout-prefs.js
+  // dispara ese evento después de cada cambio de layout.
 </script>
 
 <style>
   /* ============================================================
      ESTILOS DEL MODAL (Integración con tu modal.css)
      ============================================================ */
-  
   #stats-overlay {
     display: none;
     position: fixed;
@@ -775,11 +688,6 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
 
-  /* En desktop se ensancha bastante más que los otros modales (que llegan a
-     900px): esta ventana además de las tarjetas resumen trae una tabla de
-     7 columnas (estado, transmisor, potencia, ROE, temp., tiempo en
-     alerta, motivo) — con 620px esa tabla queda apretada o con scroll
-     horizontal. */
   @media (min-width: 860px) {
     #stats-overlay .stats-modal {
       max-width: 1040px;

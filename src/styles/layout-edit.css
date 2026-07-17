@@ -8,12 +8,34 @@
   display: none;
 }
 
+/* 1. Sección de edición general */
 html.layout-editing .layout-section {
   position: relative;
-  outline: 1px dashed var(--panel-line);
+  /* 
+    CORRECCIÓN: Usamos un color distintivo del tema (--phosphor-dim) en lugar de un gris apagado.
+    Forzamos a que la transición del contorno sea instantánea (0s) para evitar que hojas de estilo
+    externas o globales atenúen el borde punteado transcurrido un segundo.
+  */
+  outline: 2px dashed var(--phosphor-dim);
   outline-offset: 6px;
   border-radius: 8px;
-  transition: outline-color 0.15s ease;
+  transition: outline 0s !important;
+}
+
+/* 2. PARCHE ESPECÍFICO PARA EL MAPA:
+   - Forzamos "height: fit-content" para que la sección del mapa no se estire de más 
+     a lo alto (igualando a la sección compañera de al lado en el flexbox). 
+     Así el borde punteado abraza perfectamente el final del mapa y la leyenda.
+   - Aplicamos el redondeado y recorte exacto a la caja del mapa para que la leyenda
+     inferior no se desborde de las esquinas. */
+html.layout-editing #layout-section-map {
+  height: fit-content !important;
+  align-self: start; /* Evita que se estire verticalmente si tiene un vecino alto */
+}
+
+html.layout-editing #geo-map {
+  border-radius: 6px; /* Ajuste sutil para que encaje dentro de los 8px de la sección */
+  overflow: clip;     /* Recorta la leyenda y controles para que no pisen la esquina */
 }
 
 /* Mientras se arrastra una sección, deshabilita los clics dentro de ella
@@ -69,7 +91,7 @@ html.layout-editing .layout-drag-handle {
 .layout-drag-ghost {
   position: fixed;
   z-index: 80;
-  display: flex;
+  display: fixed;
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
@@ -157,4 +179,85 @@ html.layout-editing .layout-edit-toolbar {
     bottom: 12px;
     transform: none;
   }
+}
+
+/* ============================================================
+   3. SIMETRÍA MATEMÁTICA Y CORRECCIÓN DE ALTURAS PARA EDICIÓN
+   ============================================================ */
+
+/* Al entrar en edición, cambiamos el contenedor a Flexbox vertical
+   únicamente para las secciones afectadas en el DOM real (#layout-section-sidebar 
+   y #layout-section-grid), permitiendo que el tirador y el componente
+   se ordenen uno debajo del otro de manera fluida sin deformar las cajas. */
+html.layout-editing #layout-section-sidebar,
+html.layout-editing #layout-section-grid {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* ============================================================
+   4. SIMETRÍA CON EL MAPA DURANTE LA EDICIÓN
+   ============================================================ */
+
+/* El mapa es de tamaño fijo (540px). Mientras se edita mide 578px (540 +
+   28px del tirador ⠿ + 10px de su margen inferior — ver el parche #2 de
+   arriba, que fuerza height:fit-content en la sección del mapa para que
+   el contorno punteado abrace justo ese total). El panel que quede a su
+   lado (lateral o cuadrícula, el que sea el "companion" — ver
+   data-companion en map.css) debe medir EXACTAMENTE lo mismo para que se
+   vea simétrico. Mismo punto de quiebre (951px) que usa map.css para la
+   altura normal (fuera de edición) y que @media (max-width: 950px) usa
+   para apilar todo en vertical — por debajo de eso no hay "al lado del
+   mapa" que igualar, así que esta regla no debe aplicar ahí. */
+@media (min-width: 951px) {
+  html.layout-editing[data-companion="sidebar"] #layout-section-sidebar,
+  html.layout-editing[data-companion="grid"] #layout-section-grid {
+    height: 578px !important;
+    max-height: 578px !important;
+  }
+}
+
+/* Forzamos al elemento hijo real (.sidebar y .transmitter-grid o #grid)
+   a encogerse exactamente los 48px correspondientes al tirador superior,
+   respetando las dimensiones calculadas dinámicamente y habilitando scroll
+   interno si el contenido excede el espacio. */
+/* El selector de abajo elegía TODOS los hijos de #layout-section-grid
+   menos el tirador — eso incluía sin querer a .grid-section-title (el
+   rótulo "Transmisores"), que también terminaba estirado a
+   calc(100% - 48px). Resultado: un hueco en blanco enorme donde debería
+   estar el título, y las tarjetas apretadas en lo poco que quedaba.
+
+   Se fija el título (y el tirador) a su alto natural con flex:0 0 auto, y
+   solo #grid / .sidebar crece con flex:1 para ocupar lo que sobra —
+   dejando que flexbox reparta el espacio solo, en vez de restar un número
+   fijo (48px) que no contaba la altura real del título y se desbordaba. */
+html.layout-editing .layout-drag-handle,
+html.layout-editing #layout-section-grid > .grid-section-title {
+  flex: 0 0 auto !important;
+}
+
+/* Mismo patrón que el título de "Transmisores" arriba: dentro de .sidebar
+   hay una tarjeta de contenido fijo (gauge + estado, .double-card) y una
+   que debe crecer para llenar el espacio (bitácora de eventos,
+   .events-card). Se fija la primera a su alto natural y solo la segunda
+   crece — si no, alguna terminaba estirándose de más al alargar .sidebar
+   a los 578px de edición, dejando un hueco en blanco antes de la
+   bitácora. */
+html.layout-editing .sidebar-card.double-card {
+  flex: 0 0 auto !important;
+}
+
+html.layout-editing .sidebar-card.events-card {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+html.layout-editing #layout-section-sidebar > .sidebar,
+html.layout-editing #layout-section-grid > #grid {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: auto !important;
 }

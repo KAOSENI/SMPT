@@ -132,6 +132,15 @@ en `src/scripts/main.js`, con comentarios explicando cada import.
 > (se actualizan en cada tick) — si tocas `grid.js`, `detail.js` o
 > `charts.js`, conviene respetar esa separación para no reintroducir el
 > parpadeo.
+>
+> El eje vertical de cada mini-gráfica **sí muestra escala** (2-3 etiquetas
+> pequeñas, con el mismo formato que el valor de arriba: %, `:1`, °C), y su
+> rango se calcula a partir de los datos reales del transmisor — no se
+> fuerza a incluir siempre el umbral de alarma. Antes sí se forzaba, y
+> cuando el valor actual estaba lejos de su umbral (p. ej. una alarma con
+> la potencia muy por debajo de su mínimo) los datos quedaban comprimidos
+> en una franja delgadita pegada a un borde, casi invisible. La línea
+> punteada del umbral solo se dibuja cuando cae dentro de ese rango.
 
 ## Disposición de la página
 
@@ -145,6 +154,15 @@ punteada del color del tema activo; la sección donde quedaría al soltar se
 resalta con color — para que siempre quede claro qué se está moviendo y
 dónde caería. Debe quedar al menos una sección visible: si intentas ocultar
 la última, se revierte con un aviso.
+
+El mapa es de tamaño fijo (540px, o 578px mientras se edita — se le suma el
+tirador ⠿ de arriba). La sección que quede a su lado (panel lateral o
+cuadrícula, la que se haya arrastrado primero de las dos) siempre mide
+exactamente lo mismo que el mapa en ese momento, para que ambas cajas se
+vean simétricas — ver `data-companion` en `src/styles/map.css` y las reglas
+de `src/styles/layout-edit.css` con el selector `html.layout-editing`. Por
+debajo de 951px de ancho no hay "al lado del mapa" que igualar: todo se
+apila a ancho completo.
 
 Esta preferencia (igual que el tema y la configuración de cada transmisor)
 se guarda en `localStorage` — ver [Persistencia de datos](#persistencia-de-datos).

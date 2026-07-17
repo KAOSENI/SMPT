@@ -62,14 +62,47 @@ export function updateLineChart(chart, containerId, values, thresholdValue, colo
     valueLabel.title = 'Cambio respecto a la muestra anterior';
   }
 
+  // Rango del eje: basado en los datos reales, no en el umbral de alarma.
+  // Antes el eje SIEMPRE se estiraba para incluir thresholdValue — cuando
+  // el valor actual estaba lejos de su umbral (p. ej. una alarma con la
+  // potencia muy por debajo de su mínimo), los datos reales quedaban
+  // comprimidos en una franja delgadita pegada a un borde, casi invisible.
+  // Ahora el umbral solo se dibuja (línea punteada) si cae dentro del
+  // rango real ya calculado — si no, simplemente no se traza esa línea,
+  // en vez de deformar la escala para forzarla a caber.
+  const safeValues = (values && values.length) ? values : [0];
+  const dataMin = Math.min(...safeValues);
+  const dataMax = Math.max(...safeValues);
+  const span = Math.max(dataMax - dataMin, Math.abs(dataMax) * 0.05, 1);
+  const padding = span * 0.25;
+  const axisMin = dataMin - padding;
+  const axisMax = dataMax + padding;
+  const thresholdInRange = typeof thresholdValue === 'number' && thresholdValue >= axisMin && thresholdValue <= axisMax;
+
   chart.setOption({
-    grid: { left: 0, right: 0, top: 10, bottom: 0 },
+    grid: { left: 0, right: 34, top: 10, bottom: 4 },
     xAxis: { type: 'category', boundaryGap: false, show: false },
     yAxis: {
       type: 'value',
-      show: false,
-      min: (value) => Math.min(value.min, thresholdValue) * 0.95,
-      max: (value) => Math.max(value.max, thresholdValue) * 1.05,
+      // Antes show:false — sin ningún número, no había forma de saber si
+      // la gráfica trabajaba en un rango de 0-100, 1-2, etc. Ahora se ven
+      // 2-3 etiquetas pequeñas (mismo formato que el valor de arriba: %,
+      // :1, °C) a la derecha, suficiente para ubicar la escala sin
+      // convertir la mini-gráfica en un eje completo y pesado.
+      show: true,
+      min: axisMin,
+      max: axisMax,
+      splitNumber: 2,
+      position: 'right',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { show: false },
+      axisLabel: {
+        fontSize: 9,
+        color: 'var(--text-dim, #6b7280)',
+        margin: 6,
+        formatter: (v) => ((typeof fmt === 'function') ? fmt(v) : String(Math.round(v))),
+      },
     },
     series: [
       {
@@ -94,7 +127,7 @@ export function updateLineChart(chart, containerId, values, thresholdValue, colo
           symbol: 'none',
           silent: true,
           lineStyle: { color: 'var(--panel-line, #e5e7eb)', width: 1, type: 'dashed' },
-          data: [{ yAxis: thresholdValue }],
+          data: thresholdInRange ? [{ yAxis: thresholdValue }] : [],
         },
       },
     ],
