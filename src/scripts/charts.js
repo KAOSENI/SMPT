@@ -1,15 +1,4 @@
 // src/scripts/charts.js
-//
-// Antes, cada gráfica se regeneraba como un string SVG nuevo en cada tick
-// (echarts.init(null,...) -> renderToSVGString() -> dispose()), y como
-// detail.js metía ese string vía innerHTML, el navegador borraba y volvía
-// a dibujar el SVG completo cada 1.5s -> el parpadeo que se veía.
-//
-// Ahora cada gráfica es una instancia VIVA de ECharts (igual que el patrón
-// que ya usa Sidebar.astro para el gauge/pie/barras): se monta una sola vez
-// sobre un <div>, y en cada tick solo se le pasan los datos nuevos con
-// chart.setOption(...) — ECharts actualiza la línea internamente, sin
-// destruir y recrear el SVG.
 
 import * as echarts from 'echarts';
 
@@ -46,7 +35,9 @@ export function mountLineChart(containerId) {
 // flecha de tendencia. Es información que el medidor no da: hacia dónde se
 // está moviendo justo ahora, no solo dónde está parado.
 export function updateLineChart(chart, containerId, values, thresholdValue, color, fmt) {
-  if (!chart) return;
+  // Check if chart is valid and not disposed
+  if (!chart || chart.isDisposed()) return;
+  
   const len = values ? values.length : 0;
   const last = len ? values[len - 1] : 0;
   const prev = len > 1 ? values[len - 2] : last;
@@ -80,6 +71,18 @@ export function updateLineChart(chart, containerId, values, thresholdValue, colo
   const thresholdInRange = typeof thresholdValue === 'number' && thresholdValue >= axisMin && thresholdValue <= axisMax;
 
   chart.setOption({
+    // La causa real del choque era hover + animación al mismo tiempo, no
+    // la animación por sí sola: al pasar el mouse, ECharts dispara una
+    // animación de "énfasis" (resaltar/engrosar la línea) que podía
+    // pisarse con la animación de la actualización periódica (cada 1.5s,
+    // vía tick.js) — dos animaciones del mismo elemento a la vez, ahí
+    // truena ECharts (interpolate1DArray leyendo .length de undefined).
+    // silent:true en la serie (más abajo) es lo que en realidad evita
+    // esto: la serie deja de procesar eventos de mouse, así que el hover
+    // nunca dispara esa animación de énfasis — sin esa mitad de la
+    // colisión, la animación de transición de datos por sí sola es segura
+    // y se puede dejar activa.
+    tooltip: { show: false },
     grid: { left: 0, right: 34, top: 10, bottom: 4 },
     xAxis: { type: 'category', boundaryGap: false, show: false },
     yAxis: {
@@ -111,7 +114,9 @@ export function updateLineChart(chart, containerId, values, thresholdValue, colo
         smooth: true,
         symbol: 'circle',
         showSymbol: false,
+        silent: true,
         animationDuration: 400,
+        animationEasing: 'cubicOut',
         lineStyle: { color, width: 2, cap: 'round' },
         areaStyle: {
           color: {
@@ -126,6 +131,13 @@ export function updateLineChart(chart, containerId, values, thresholdValue, colo
         markLine: {
           symbol: 'none',
           silent: true,
+          // ECharts le pone por defecto una etiqueta con el valor exacto
+          // al lado de la línea — ESE era el número junto a la línea
+          // punteada del umbral, no el tooltip. La línea punteada ya
+          // comunica "aquí está el límite" por sí sola, no hace falta el
+          // número (y la etiqueta del eje, a la derecha, ya muestra la
+          // escala completa).
+          label: { show: false },
           lineStyle: { color: 'var(--panel-line, #e5e7eb)', width: 1, type: 'dashed' },
           data: thresholdInRange ? [{ yAxis: thresholdValue }] : [],
         },

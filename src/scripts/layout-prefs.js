@@ -81,25 +81,27 @@ function computeCompanion(order, visible) {
   return candidate || 'none';
 }
 
-export function applyLayout() {
+function applyOrderAttributes(order, visible) {
   // Mismo mecanismo que usa el script inline en Layout.astro (que corre
   // antes del primer pintado): atributos en <html>, no estilos inline por
   // elemento. Mantenerlos como única fuente de verdad evita que ambos
   // caminos (carga inicial vs. cambios en vivo al arrastrar) se
   // desincronicen entre sí.
   const html = document.documentElement;
-
-  prefs.order.forEach((key, index) => {
+  order.forEach((key, index) => {
     html.setAttribute(`data-order-${key}`, String(index));
   });
+  html.setAttribute('data-companion', computeCompanion(order, visible));
+}
 
-  html.setAttribute('data-companion', computeCompanion(prefs.order, prefs.visible));
+export function applyLayout() {
+  applyOrderAttributes(prefs.order, prefs.visible);
 
   const hidden = Object.entries(prefs.visible)
     .filter(([, visible]) => !visible)
     .map(([key]) => key);
-  if (hidden.length) html.setAttribute('data-hidden-sections', hidden.join(' '));
-  else html.removeAttribute('data-hidden-sections');
+  if (hidden.length) document.documentElement.setAttribute('data-hidden-sections', hidden.join(' '));
+  else document.documentElement.removeAttribute('data-hidden-sections');
 
   // Los contenedores de las gráficas pudieron cambiar de tamaño al
   // reacomodar la página — ECharts no se reajusta solo ante eso, así que
@@ -121,6 +123,17 @@ export function applyLayout() {
     renderGrid();
     window.initSidebarCharts?.();
   }, 50);
+}
+
+// Vista previa en vivo mientras se arrastra una sección (ver
+// layout-dnd.js): solo mueve visualmente las secciones (los mismos
+// atributos que usa applyLayout(), nada más) — a propósito NO dispara el
+// resize/recarga de gráficas de applyLayout() en cada pasada del arrastre
+// (sería carísimo repetirlo en cada dragover), y a propósito tampoco toca
+// prefs.order ni localStorage: es solo una previsualización, se confirma
+// de verdad hasta soltar (ver setOrder).
+export function previewOrder(order) {
+  applyOrderAttributes(order, prefs.visible);
 }
 
 // Llamado desde layout-dnd.js cuando el usuario suelta una sección

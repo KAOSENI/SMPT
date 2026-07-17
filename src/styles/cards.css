@@ -62,6 +62,28 @@
   overflow: hidden;
 }
 
+/* Envuelve el dot de estado + el badge de potencia como UN solo hijo de
+   .card-top (que espera exactamente 2 hijos para su justify-content:
+   space-between) — así agregar el badge no corre ni desalinea nada. */
+.card-top-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Mismo dato que el medidor "Potencia actual" de abajo — oculto por
+   defecto porque ahí ya se ve. Solo se muestra cuando la cuadrícula queda
+   junto al mapa (ver map.css), que es cuando el medidor se oculta por
+   completo para no agregar alto a la tarjeta en ese modo. */
+.card-power-badge {
+  display: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
 .tx-name { 
   font-weight: 600; 
   font-size: 14px; 

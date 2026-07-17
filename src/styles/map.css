@@ -17,6 +17,25 @@
   order: 1;
 }
 
+/* En pantallas angostas, 540px fijos se salen del ancho de la pantalla
+   (el mapa "sobresalía" de los límites horizontales). Por debajo de
+   768px (mismo punto de quiebre que ya usa responsive.css para el resto
+   del layout en móvil) el mapa se vuelve fluido: ocupa el ancho
+   disponible sin pasar de 540px, y mantiene su forma cuadrada con
+   aspect-ratio en vez de una altura fija — #geo-map adentro ya es
+   width/height:100% de este contenedor, así que se ajusta solo. */
+@media (max-width: 768px) {
+  .layout-map {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: 540px;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+  }
+}
+
 .layout-sidebar {
   flex: 1 1 340px;
   min-width: 0;
@@ -114,6 +133,13 @@ html[data-companion="none"] #layout-section-grid {
   html[data-companion="grid"] #layout-section-grid .meter-row,
   html[data-companion="grid"] #layout-section-grid .meter-track {
     display: none;
+  }
+
+  /* El badge del encabezado (ver cards.css, oculto por defecto) es lo que
+     reemplaza al medidor de arriba en este modo — mismo dato, sin ocupar
+     una fila propia. */
+  html[data-companion="grid"] #layout-section-grid .card-power-badge {
+    display: inline-block;
   }
 
   /* Mismo acople vertical cuando el companion del mapa es el panel

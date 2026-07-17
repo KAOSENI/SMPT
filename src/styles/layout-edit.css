@@ -121,6 +121,37 @@ html.layout-editing .layout-drag-handle {
   background: color-mix(in srgb, var(--phosphor) 12%, transparent);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--phosphor) 6%, transparent);
   transition: outline-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+/* Barra que marca de qué LADO del destino quedaría el elemento arrastrado
+   (antes = izquierda/arriba, después = derecha/abajo — según en qué mitad
+   del destino esté el puntero, ver resolveInsertAfter() en
+   layout-dnd.js). Antes solo había un contorno alrededor de TODA la
+   sección, sin indicar el lado — de ahí la ambigüedad al intentar poner
+   algo a la izquierda vs. a la derecha del mapa. */
+.layout-section.layout-drop-before::after,
+.layout-section.layout-drop-after::after {
+  content: '';
+  position: absolute;
+  background: var(--phosphor);
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.layout-section.layout-drop-before::after {
+  left: -10px;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+}
+
+.layout-section.layout-drop-after::after {
+  right: -10px;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
 }
 
 .layout-edit-toolbar {

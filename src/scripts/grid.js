@@ -83,7 +83,10 @@ function buildCardSkeleton(tx) {
         <p class="tx-name">${tx.shortName}</p>
         <p class="tx-freq">${tx.freq} · ${tx.band} · ${tx.municipio}</p>
       </div>
-      <div class="dot" id="dot-${tx.id}" title="Estado del transmisor"></div>
+      <div class="card-top-right">
+        <span class="card-power-badge" id="power-badge-${tx.id}" title="Potencia actual">—</span>
+        <div class="dot" id="dot-${tx.id}" title="Estado del transmisor"></div>
+      </div>
     </div>
     <div class="meter-row"><span title="Porcentaje de la potencia nominal del transmisor">Potencia actual</span><span id="power-val-${tx.id}">—</span></div>
     <div class="meter-track"><div class="meter-fill" id="meter-${tx.id}" style="width:0%;"></div></div>
@@ -116,6 +119,15 @@ function updateCardData(tx, s) {
 
   const powerVal = document.getElementById('power-val-' + tx.id);
   if (powerVal) powerVal.textContent = tx.power.toFixed(0) + '%';
+
+  // Mismo dato que el medidor de arriba, pero en un elemento aparte: el
+  // medidor se oculta por completo cuando la cuadrícula queda junto al
+  // mapa (para no cambiar el alto de la tarjeta en ese modo), y este badge
+  // es lo que lo reemplaza ahí — vive en el encabezado, no agrega ninguna
+  // fila nueva. Oculto por defecto (ver cards.css); solo se muestra junto
+  // al mapa (ver map.css).
+  const powerBadge = document.getElementById('power-badge-' + tx.id);
+  if (powerBadge) powerBadge.textContent = tx.power.toFixed(0) + '%';
 
   const meter = document.getElementById('meter-' + tx.id);
   if (meter) {
