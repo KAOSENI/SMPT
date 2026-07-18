@@ -22,3 +22,13 @@
     .grid{ grid-template-columns:1fr; }
     .detail{ padding:16px; }
   }
+
+@media (max-width: 480px) {
+  /* ... tus estilos actuales de responsive.css ... */
+
+  /* Estabiliza la tarjeta doble en móviles evitando que colapse */
+  .sidebar-card.double-card {
+    flex: 1 1 auto !important;   /* Permite que se adapte mejor al layout móvil */
+    min-height: 280px !important; /* Altura mínima fija para contener el Gauge + Pie estables uno abajo del otro */
+  }
+}

@@ -18,7 +18,6 @@
 // original.
 
 import { getLayoutPrefs, setOrder, previewOrder } from './layout-prefs.js';
-import { openLayoutModal } from './layout-modal.js';
 
 const SECTION_KEYS = ['dashboard', 'map', 'sidebar', 'grid'];
 const FLIP_DURATION = '0.28s';
@@ -292,17 +291,18 @@ function setEditing(on) {
   document.documentElement.classList.toggle('layout-editing', on);
 }
 
+// Se activa desde el botón "Editar disposición" dentro de la pestaña
+// Interfaz del modal de Configuración (ver settings.js) — antes había un
+// ícono aparte en el encabezado para esto, pero quedaba duplicado con la
+// visibilidad de secciones que ya vive en Configuración, así que ahora
+// todo el ajuste de disposición se dispara desde un solo lugar.
+export function startLayoutEditing() {
+  setEditing(true);
+}
+
 export function initLayoutDnd() {
   document.querySelectorAll('[data-layout-handle]').forEach((handle) => {
     handle.addEventListener('pointerdown', onPointerDown);
-  });
-
-  document.getElementById('layout-btn')?.addEventListener('click', () => {
-    setEditing(!document.documentElement.classList.contains('layout-editing'));
-  });
-
-  document.getElementById('layout-edit-visibility-btn')?.addEventListener('click', () => {
-    openLayoutModal();
   });
 
   document.getElementById('layout-edit-done-btn')?.addEventListener('click', () => {

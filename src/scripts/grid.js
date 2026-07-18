@@ -1,4 +1,5 @@
-// src/scripts/grid.js
+// src/scripts/grid.js - Versión optimizada con procesamiento por lotes
+
 import { state } from './state.js';
 import { statusOf, statusReasons } from './status.js';
 import { updateSidebarStats } from './events.js';
@@ -7,18 +8,164 @@ import { chartSkeletonHtml, mountLineChart, updateLineChart } from './charts.js'
 
 const cardChartInstances = {};
 let gridResizeObserver = null;
+let gridInitialized = false;
+let renderPending = false;
 
-// Sincroniza el redibujado con el ciclo de renderizado del navegador
+// --- PROCESAMIENTO POR LOTES ---
+const BATCH_SIZE = 2;
+const BATCH_DELAY_MS = 16;
+
+function processBatch(ids, index, callback) {
+  const end = Math.min(index + BATCH_SIZE, ids.length);
+  const batch = ids.slice(index, end);
+
+  batch.forEach(id => {
+    const tx = state.find(s => s.id === id);
+    if (!tx) return;
+
+    const s = statusOf(tx);
+    let card = document.getElementById(`card-${tx.id}`);
+    if (!card) {
+      card = buildCardSkeleton(tx);
+      const grid = document.getElementById('grid');
+      if (grid) grid.appendChild(card);
+    }
+    if (card) {
+      updateCardData(tx, s);
+    }
+  });
+
+  updateStatusCounters();
+
+  if (end < ids.length) {
+    setTimeout(() => {
+      processBatch(ids, end, callback);
+    }, BATCH_DELAY_MS);
+  } else {
+    gridInitialized = true;
+    renderPending = false;
+    updateCompactMode();
+    if (callback) callback();
+    window.dispatchEvent(new CustomEvent('grid-ready'));
+  }
+}
+
+// --- ELIMINAR TARJETAS HUÉRFANAS ---
+function removeOrphanCards() {
+  const grid = document.getElementById('grid');
+  if (!grid) return;
+
+  const validIds = new Set(state.map(tx => tx.id));
+  const cards = grid.querySelectorAll('.card');
+
+  cards.forEach(card => {
+    const cardId = parseInt(card.id.replace('card-', ''), 10);
+    if (!validIds.has(cardId)) {
+      // Eliminar instancia de gráfica
+      if (cardChartInstances[cardId]) {
+        try {
+          cardChartInstances[cardId].dispose();
+        } catch (e) {}
+        delete cardChartInstances[cardId];
+      }
+      // Eliminar tarjeta del DOM
+      card.remove();
+    }
+  });
+}
+
+// --- FUNCIÓN PRINCIPAL renderGrid ---
+export function renderGrid() {
+  // Si ya hay una renderización pendiente, no duplicar
+  if (renderPending) return;
+
+  const grid = document.getElementById('grid');
+  if (!grid) return;
+
+  // --- SIEMPRE ELIMINAR TARJETAS HUÉRFANAS (incluso si ya está inicializado) ---
+  removeOrphanCards();
+
+  // Si ya está inicializado, solo actualizar datos (sin recrear)
+  if (gridInitialized) {
+    updateAllCards();
+    return;
+  }
+
+  const section = document.getElementById('layout-section-grid');
+  if (section) {
+    initResizeObserver(section);
+  }
+
+  const hiddenSections = (document.documentElement.getAttribute('data-hidden-sections') || '').split(' ');
+  if (hiddenSections.includes('grid')) return;
+
+  updateCompactGridColumns();
+
+  const ids = state.map(tx => tx.id);
+
+  if (ids.length === 0) {
+    // Si no hay transmisores, mostrar mensaje
+    grid.innerHTML = `
+      <div style="grid-column:1/-1; text-align:center; padding:40px 20px; color:var(--text-dim); font-family:var(--mono);">
+        <p style="font-size:16px; margin-bottom:8px;">No hay transmisores configurados</p>
+        <p style="font-size:12px;">Agrega uno desde Configuración → Sistema y transmisores</p>
+      </div>
+    `;
+    gridInitialized = true;
+    return;
+  }
+
+  renderPending = true;
+  processBatch(ids, 0);
+}
+
+// --- ACTUALIZACIÓN RÁPIDA (para ticks) ---
+export function updateAllCards() {
+  requestAnimationFrame(() => {
+    state.forEach(tx => {
+      const s = statusOf(tx);
+      const card = document.getElementById(`card-${tx.id}`);
+      if (card) {
+        updateCardData(tx, s);
+      }
+    });
+    updateStatusCounters();
+    updateSidebarStats();
+  });
+}
+
+// --- ACTUALIZAR CONTADORES ---
+function updateStatusCounters() {
+  let ok = 0, warn = 0, crit = 0;
+  state.forEach(tx => {
+    try {
+      const s = statusOf(tx);
+      if (s === 'ok') ok++;
+      else if (s === 'warn') warn++;
+      else crit++;
+    } catch {
+      // Ignorar errores
+    }
+  });
+
+  const okEl = document.getElementById('count-ok');
+  if (okEl) okEl.textContent = ok;
+  const warnEl = document.getElementById('count-warn');
+  if (warnEl) warnEl.textContent = warn;
+  const critEl = document.getElementById('count-crit');
+  if (critEl) critEl.textContent = crit;
+}
+
+// --- RESIZE ---
 export function resizeCardCharts() {
   requestAnimationFrame(() => {
-    // Un pequeño delay de 10ms garantiza que el DOM ya computó el ancho real de las tarjetas
-    setTimeout(() => {
-      Object.values(cardChartInstances).forEach((chart) => {
-        if (chart) {
+    Object.values(cardChartInstances).forEach((chart) => {
+      if (chart && typeof chart.resize === 'function') {
+        try {
           chart.resize();
-        }
-      });
-    }, 10);
+        } catch (e) {}
+      }
+    });
   });
 }
 
@@ -26,11 +173,11 @@ function initResizeObserver(section) {
   if (gridResizeObserver) {
     gridResizeObserver.disconnect();
   }
-  
+
   gridResizeObserver = new ResizeObserver(() => {
     updateCompactMode();
   });
-  
+
   gridResizeObserver.observe(section);
 }
 
@@ -46,12 +193,13 @@ export function updateCompactMode() {
     return;
   }
 
-  section.classList.remove('grid-compact');
-  
+  // ✅ 1. PRIMERO: Leer (sin modificaciones previas)
   const overflowing = gridContainer.scrollHeight > gridContainer.clientHeight;
+
+  // ✅ 2. LUEGO: Modificar el DOM
+  section.classList.remove('grid-compact');
   section.classList.toggle('grid-compact', overflowing);
-  
-  // Forzamos la sincronización de tamaño de los gráficos
+
   resizeCardCharts();
 }
 
@@ -120,12 +268,6 @@ function updateCardData(tx, s) {
   const powerVal = document.getElementById('power-val-' + tx.id);
   if (powerVal) powerVal.textContent = tx.power.toFixed(0) + '%';
 
-  // Mismo dato que el medidor de arriba, pero en un elemento aparte: el
-  // medidor se oculta por completo cuando la cuadrícula queda junto al
-  // mapa (para no cambiar el alto de la tarjeta en ese modo), y este badge
-  // es lo que lo reemplaza ahí — vive en el encabezado, no agrega ninguna
-  // fila nueva. Oculto por defecto (ver cards.css); solo se muestra junto
-  // al mapa (ver map.css).
   const powerBadge = document.getElementById('power-badge-' + tx.id);
   if (powerBadge) powerBadge.textContent = tx.power.toFixed(0) + '%';
 
@@ -143,10 +285,7 @@ function updateCardData(tx, s) {
 
   const statusReason = document.getElementById('status-reason-' + tx.id);
   if (statusReason) {
-    // Si no hay errores, inyectamos un espacio en blanco no rompible (\u00A0)
-    // para forzar a que el elemento mantenga su altura física intacta en el DOM.
     statusReason.textContent = reasons.length ? reasons.join(' · ') : '\u00A0';
-    // Se cambia de display a visibility para ocultar/mostrar sin destruir la caja estructural
     statusReason.style.visibility = reasons.length ? 'visible' : 'hidden';
   }
 
@@ -158,46 +297,26 @@ function updateCardData(tx, s) {
   }
 
   if (!cardChartInstances[tx.id]) {
-    cardChartInstances[tx.id] = mountLineChart(`card-chart-${tx.id}`);
+    setTimeout(() => {
+      const container = document.getElementById(`card-chart-${tx.id}`);
+      if (container) {
+        cardChartInstances[tx.id] = mountLineChart(`card-chart-${tx.id}`);
+        updateLineChart(cardChartInstances[tx.id], `card-chart-${tx.id}`, tx.history.power, tx.thresholds.powerMin, currentColor, fmtPct);
+      }
+    }, 0);
+  } else {
+    updateLineChart(cardChartInstances[tx.id], `card-chart-${tx.id}`, tx.history.power, tx.thresholds.powerMin, currentColor, fmtPct);
   }
-  updateLineChart(cardChartInstances[tx.id], `card-chart-${tx.id}`, tx.history.power, tx.thresholds.powerMin, currentColor, fmtPct);
 }
 
-export function renderGrid() {
-  const grid = document.getElementById('grid');
-  if (!grid) return;
-
-  const section = document.getElementById('layout-section-grid');
-  if (section) {
-    initResizeObserver(section);
-  }
-
-  const hiddenSections = (document.documentElement.getAttribute('data-hidden-sections') || '').split(' ');
-  if (hiddenSections.includes('grid')) return;
-
-  updateCompactGridColumns();
-
-  let ok = 0, warn = 0, crit = 0;
-
-  state.forEach(tx => {
-    const s = statusOf(tx);
-    if (s === 'ok') ok++; else if (s === 'warn') warn++; else crit++;
-
-    let card = document.getElementById(`card-${tx.id}`);
-    if (!card) {
-      card = buildCardSkeleton(tx);
-      grid.appendChild(card);
-    }
-    updateCardData(tx, s);
+// --- REINICIALIZAR GRID (cuando se eliminan/agregan transmisores) ---
+export function reinitGrid() {
+  gridInitialized = false;
+  gridRenderPending = false;
+  // Limpiar instancias de gráficas
+  Object.values(cardChartInstances).forEach(chart => {
+    try { chart.dispose(); } catch (e) {}
   });
-
-  const okEl = document.getElementById('count-ok');
-  if (okEl) okEl.textContent = ok;
-  const warnEl = document.getElementById('count-warn');
-  if (warnEl) warnEl.textContent = warn;
-  const critEl = document.getElementById('count-crit');
-  if (critEl) critEl.textContent = crit;
-
-  updateSidebarStats();
-  updateCompactMode();
+  Object.keys(cardChartInstances).forEach(key => delete cardChartInstances[key]);
+  renderGrid();
 }

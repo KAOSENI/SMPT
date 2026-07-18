@@ -1,11 +1,5 @@
-// Funciones que modifican el estado de un transmisor (umbrales, fases, equipos
-// instalados/encendidos), registran el evento correspondiente si cambió el semáforo,
-// y vuelven a pintar todo lo que depende de ese transmisor.
-//
-// Nota sobre imports circulares: este archivo importa de detail.js y settings.js,
-// y esos a su vez importan de aquí. Es seguro en módulos ES porque todo el uso
-// ocurre dentro de funciones (nunca al cargar el módulo), así que en tiempo de
-// ejecución todos los bindings ya están resueltos.
+// src/scripts/controls.js
+// Funciones que modifican el estado de un transmisor.
 
 import { state } from './state.js';
 import { statusOf } from './status.js';
@@ -19,14 +13,15 @@ import { showToast } from './toast.js';
 import { EQUIPMENT_LABELS } from './data/stations.js';
 
 export function toggleEquipmentInstalled(id, key) {
+  if (!state[id]) return;
   state[id].equipment[key].installed = !state[id].equipment[key].installed;
   if (!state[id].equipment[key].installed) state[id].equipment[key].on = false;
   checkStatusChange(id);
   renderAll();
-  // Sin toast aquí para no interrumpir la edición
 }
 
 export function toggleEquipmentOn(id, key) {
+  if (!state[id]) return;
   const eq = state[id].equipment[key];
   if (!eq.installed) return;
   eq.on = !eq.on;
@@ -35,18 +30,21 @@ export function toggleEquipmentOn(id, key) {
 }
 
 export function togglePhase(id, key) {
+  if (!state[id]) return;
   state[id][key] = !state[id][key];
   checkStatusChange(id);
   renderAll();
 }
 
 export function updatePhaseMonitoring(id, value) {
+  if (!state[id]) return;
   state[id].config.phaseMonitoring = parseInt(value);
   checkStatusChange(id);
   renderAll();
 }
 
 export function updateThreshold(id, field, value) {
+  if (!state[id]) return;
   const v = parseFloat(value);
   if (!isNaN(v)) state[id].thresholds[field] = v;
   checkStatusChange(id);
@@ -54,7 +52,16 @@ export function updateThreshold(id, field, value) {
 }
 
 export function checkStatusChange(txId) {
-  const tx = state[txId];
+  // --- VALIDACIÓN: Si txId es undefined o no existe en state ---
+  if (txId === undefined || txId === null) {
+    return false;
+  }
+  
+  const tx = state.find(s => s.id === txId);
+  if (!tx) {
+    return false;
+  }
+  
   const newStatus = statusOf(tx);
   const oldStatus = tx._lastStatus;
 
@@ -64,7 +71,7 @@ export function checkStatusChange(txId) {
       newStatus === 'warn' ? 'entró en estado de advertencia' :
         'entró en estado crítico';
     addEvent(txId, newStatus, msg);
-    return;
+    return true;
   }
 
   if (newStatus !== oldStatus) {
@@ -85,42 +92,69 @@ export function checkStatusChange(txId) {
     }
     addEvent(txId, newStatus, msg);
     
-    // Solo mostrar toast para cambios de estado críticos
-    // (esto ocurre fuera del modal de configuración normalmente)
-    if (newStatus === 'crit') {
-      showToast(`${tx.shortName} - ${msg}`, 'error');
-    } else if (newStatus === 'warn') {
-      showToast(`${tx.shortName} - ${msg}`, 'info');
+    // --- VALIDACIÓN: Asegurar que tx existe antes de mostrar toast ---
+    if (tx && tx.shortName) {
+      const fullMsg = `${tx.shortName} - ${msg}`;
+      if (newStatus === 'crit') {
+        showToast(fullMsg, 'error');
+      } else if (newStatus === 'warn') {
+        showToast(fullMsg, 'info');
+      }
+    } else {
+      // Si no hay nombre, mostrar mensaje genérico
+      if (newStatus === 'crit') {
+        showToast(`Transmisor ${txId} - ${msg}`, 'error');
+      } else if (newStatus === 'warn') {
+        showToast(`Transmisor ${txId} - ${msg}`, 'info');
+      }
     }
+    return true;
   }
+  
+  return false;
 }
 
 export function renderAll() {
   saveConfig(state);
+  
+  const isSettingsClosing = document.getElementById('settings-content')?.classList.contains('settings-closing');
+
+  if (isSettingsClosing) {
+    renderGrid();
+    renderGeoMap();
+    updateSidebarStats();
+    return;
+  }
+
   renderGrid();
   renderGeoMap();
   updateSidebarStats();
   
-  // Actualizar detalle sin recargar el modal de configuración
   if (openDetailId !== null) {
-    // Solo actualizar valores, no regenerar todo el HTML
-    import('./detail.js').then(({ updateDetailValues }) => {
-      if (typeof updateDetailValues === 'function') {
-        updateDetailValues(openDetailId);
-      } else {
-        // Fallback: reabrir detail
-        openDetail(openDetailId);
-      }
-    });
+    // Verificar que el transmisor aún exista
+    const exists = state.some(s => s.id === openDetailId);
+    if (exists) {
+      import('./detail.js').then(({ updateDetailValues }) => {
+        if (typeof updateDetailValues === 'function') {
+          updateDetailValues(openDetailId);
+        }
+      });
+    } else {
+      import('./detail.js').then(({ closeDetail }) => closeDetail());
+    }
   }
   
-  // NO llamar a openSettings() aquí para evitar recargar el modal
-  // En su lugar, solo actualizar valores si está abierto
   if (settingsOpenId !== null) {
-    import('./settings.js').then(({ updateSettingsValues }) => {
-      if (typeof updateSettingsValues === 'function') {
-        updateSettingsValues(settingsOpenId);
-      }
-    });
+    // Verificar que el transmisor aún exista
+    const exists = state.some(s => s.id === settingsOpenId);
+    if (exists) {
+      import('./settings.js').then(({ updateStationTabValues }) => {
+        if (typeof updateStationTabValues === 'function') {
+          updateStationTabValues(settingsOpenId);
+        }
+      });
+    } else {
+      import('./settings.js').then(({ closeSettings }) => closeSettings());
+    }
   }
 }

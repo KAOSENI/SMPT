@@ -207,15 +207,29 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   import { onSplashReady } from '../scripts/splash-ready.js';
 
   // ============================================================
-  // FUNCIONES DE ESTADO
+  // FUNCIONES DE ESTADO CON VALIDACIÓN
   // ============================================================
+  
+  // Verificar que state tenga transmisores válidos
+  function getValidTransmitters() {
+    if (!Array.isArray(state) || state.length === 0) {
+      return [];
+    }
+    return state.filter(tx => tx && typeof tx === 'object' && tx.equipment);
+  }
+
   function getStatusCounts(): { ok: number; warn: number; crit: number } {
     let ok = 0, warn = 0, crit = 0;
-    state.forEach(tx => {
-      const s = statusOf(tx);
-      if (s === 'ok') ok++;
-      else if (s === 'warn') warn++;
-      else crit++;
+    const validTxs = getValidTransmitters();
+    validTxs.forEach(tx => {
+      try {
+        const s = statusOf(tx);
+        if (s === 'ok') ok++;
+        else if (s === 'warn') warn++;
+        else crit++;
+      } catch {
+        // Ignorar errores de status
+      }
     });
     return { ok, warn, crit };
   }
@@ -271,7 +285,7 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   }
 
   // ============================================================
-  // ACTUALIZACIÓN DEL MODAL
+  // ACTUALIZACIÓN DEL MODAL CON VALIDACIÓN
   // ============================================================
   function formatDuration(ms: number): string {
     if (!ms || ms < 1000) return '0s';
@@ -298,7 +312,18 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
 
   function updateStatsModal(): void {
     try {
-      const total = state.length;
+      const validTxs = getValidTransmitters();
+      const total = validTxs.length;
+      
+      if (total === 0) {
+        // No hay transmisores, mostrar mensaje vacío
+        const tbody = document.getElementById('stats-table-body');
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:20px;">No hay transmisores configurados</td></tr>`;
+        }
+        return;
+      }
+
       const fm = parseInt(document.getElementById('sidebar-fm')?.textContent || '0') || 0;
       const am = parseInt(document.getElementById('sidebar-am')?.textContent || '0') || 0;
 
@@ -318,13 +343,13 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
           : 'Sin datos registrados';
       }
 
-      const totalDegradedMs = state.reduce((sum, tx) => sum + (tx.degradedMs || 0), 0);
+      const totalDegradedMs = validTxs.reduce((sum, tx) => sum + (tx.degradedMs || 0), 0);
       const degradedEl = document.getElementById('stats-degraded-time');
       if (degradedEl) degradedEl.textContent = formatDuration(totalDegradedMs);
 
-      const avgPower = state.reduce((sum, tx) => sum + tx.power, 0) / total;
-      const avgVswr = state.reduce((sum, tx) => sum + tx.vswr, 0) / total;
-      const avgTemp = state.reduce((sum, tx) => sum + tx.temp, 0) / total;
+      const avgPower = validTxs.reduce((sum, tx) => sum + tx.power, 0) / total;
+      const avgVswr = validTxs.reduce((sum, tx) => sum + tx.vswr, 0) / total;
+      const avgTemp = validTxs.reduce((sum, tx) => sum + tx.temp, 0) / total;
 
       const avgPowerEl = document.getElementById('stats-avg-power');
       if (avgPowerEl) avgPowerEl.textContent = avgPower.toFixed(0) + '%';
@@ -334,8 +359,8 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
       if (avgTempEl) avgTempEl.textContent = avgTemp.toFixed(1) + '°C';
 
       let phaseDown = 0;
-      state.forEach((tx) => {
-        const pm = tx.config.phaseMonitoring;
+      validTxs.forEach((tx) => {
+        const pm = tx.config?.phaseMonitoring || 0;
         if (pm === 0) return;
         const aOk = tx.phaseA;
         const bOk = pm === 2 ? tx.phaseB : true;
@@ -345,35 +370,54 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
       if (phaseDownEl) phaseDownEl.textContent = String(phaseDown);
 
       let equipOff = 0;
-      state.forEach((tx) => {
-        Object.values(tx.equipment).forEach((eq: any) => {
-          if (eq.installed && !eq.on) equipOff++;
-        });
+      validTxs.forEach((tx) => {
+        if (tx.equipment) {
+          Object.values(tx.equipment).forEach((eq: any) => {
+            if (eq && eq.installed && !eq.on) equipOff++;
+          });
+        }
       });
       const equipOffEl = document.getElementById('stats-equip-off');
       if (equipOffEl) equipOffEl.textContent = String(equipOff);
 
       const severityRank: Record<string, number> = { crit: 0, warn: 1, ok: 2 };
-      const rows = [...state].sort((a, b) => {
-        const diff = severityRank[statusOf(a)] - severityRank[statusOf(b)];
-        return diff !== 0 ? diff : a.shortName.localeCompare(b.shortName);
+      const rows = [...validTxs].sort((a, b) => {
+        try {
+          const diff = severityRank[statusOf(a)] - severityRank[statusOf(b)];
+          return diff !== 0 ? diff : (a.shortName || '').localeCompare(b.shortName || '');
+        } catch {
+          return 0;
+        }
       });
 
       const tbody = document.getElementById('stats-table-body');
       if (tbody) {
         tbody.innerHTML = rows.map((tx) => {
-          const s = statusOf(tx);
-          const reasons = s === 'ok' ? [] : statusReasons(tx);
-          return `
-            <tr onclick="closeStatsModal(); openDetail(${tx.id});">
-              <td><span class="stats-status-dot ${s}-dot"></span></td>
-              <td>${tx.shortName}</td>
-              <td>${tx.power.toFixed(0)}%</td>
-              <td>${tx.vswr.toFixed(2)}:1</td>
-              <td>${tx.temp.toFixed(1)}°C</td>
-              <td>${formatDuration(tx.degradedMs || 0)}</td>
-              <td class="stats-table-reason">${reasons.join(' · ')}</td>
-            </tr>`;
+          try {
+            const s = statusOf(tx);
+            const reasons = s === 'ok' ? [] : statusReasons(tx);
+            return `
+              <tr onclick="closeStatsModal(); window.openDetail(${tx.id});">
+                <td><span class="stats-status-dot ${s}-dot"></span></td>
+                <td>${tx.shortName || tx.call || 'Desconocido'}</td>
+                <td>${(tx.power || 0).toFixed(0)}%</td>
+                <td>${(tx.vswr || 0).toFixed(2)}:1</td>
+                <td>${(tx.temp || 0).toFixed(1)}°C</td>
+                <td>${formatDuration(tx.degradedMs || 0)}</td>
+                <td class="stats-table-reason">${reasons.join(' · ')}</td>
+              </tr>`;
+          } catch {
+            return `
+              <tr>
+                <td><span class="stats-status-dot ok-dot"></span></td>
+                <td>${tx.shortName || tx.call || 'Desconocido'}</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td class="stats-table-reason">Datos no disponibles</td>
+              </tr>`;
+          }
         }).join('');
       }
     } catch {}
@@ -386,36 +430,66 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   // ============================================================
   // INICIALIZACIÓN DE GRÁFICAS
   // ============================================================
+  let sidebarInitialized = false;
+
   async function initSidebarCharts(): Promise<void> {
-    if (window._gaugeChart) return;
+    // Evitar múltiples inicializaciones
+    if (sidebarInitialized) return;
 
     const hiddenSections = (document.documentElement.getAttribute('data-hidden-sections') || '').split(' ');
     if (hiddenSections.includes('sidebar')) return;
+
+    // Verificar que haya transmisores válidos
+    const validTxs = getValidTransmitters();
+    if (validTxs.length === 0) {
+      // No hay transmisores, mostrar mensaje en las gráficas
+      return;
+    }
 
     try {
       const echarts = await import('echarts');
       (window as any)._echartsLib = echarts;
 
+      // === GAUGE CHART ===
       const gaugeDom = document.getElementById('gauge-chart');
       if (gaugeDom) {
+        const existing = echarts.getInstanceByDom(gaugeDom);
+        if (existing) existing.dispose();
+        
         window._gaugeChart = echarts.init(gaugeDom, null, { renderer: 'svg' });
         updateGaugeChart();
       }
 
+      // === PIE CHART ===
       const statusDom = document.getElementById('pie-status');
       if (statusDom) {
-        const statusChart = echarts.init(statusDom, null, { renderer: 'svg' });
-        window._statusPie = statusChart;
+        const existing = echarts.getInstanceByDom(statusDom);
+        if (existing) existing.dispose();
+        
+        window._statusPie = echarts.init(statusDom, null, { renderer: 'svg' });
         const counts = getStatusCounts();
         updateStatusPie(counts.ok, counts.warn, counts.crit);
-        setTimeout(() => statusChart.resize(), 200);
+        setTimeout(() => window._statusPie?.resize(), 200);
       }
 
-      window.addEventListener('resize', () => {
-        window._gaugeChart?.resize();
-        window._statusPie?.resize();
-      });
+      // === RESIZE HANDLER ===
+      window.removeEventListener('resize', sidebarResizeHandler);
+      window.addEventListener('resize', sidebarResizeHandler);
 
+      sidebarInitialized = true;
+
+    } catch {}
+  }
+
+  function reinitSidebarCharts(): void {
+    sidebarInitialized = false;
+    initSidebarCharts();
+  }
+
+  function sidebarResizeHandler(): void {
+    try {
+      window._gaugeChart?.resize();
+      window._statusPie?.resize();
     } catch {}
   }
 
@@ -443,77 +517,64 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
     const status = getGaugeStatus(availability);
     const echartsLib = (window as any)._echartsLib;
 
-    const renderItem = (params: any, api: any) => {
-      const valOnRadian = api.value(1);
-      const coords = api.coord([api.value(0), valOnRadian]);
-      const polarEndRadian = coords[3];
-      const cx = params.coordSys.cx;
-      const cy = params.coordSys.cy;
-      const r = Math.min(cx, cy) * 0.85;
-      const r0 = r * 0.72;
-      const thickness = r - r0;
+    const progressFill = echartsLib
+      ? new echartsLib.graphic.LinearGradient(0, 0, 1, 1, [
+          { offset: 0, color: status.from },
+          { offset: 1, color: status.to }
+        ])
+      : status.color;
 
-      const progressFill = echartsLib
-        ? new echartsLib.graphic.LinearGradient(0, 0, 1, 1, [
-            { offset: 0, color: status.from },
-            { offset: 1, color: status.to }
-          ])
-        : status.color;
-
-      return {
-        type: 'group',
-        children: [
-          {
-            type: 'sector',
-            shape: { cx, cy, r, r0, startAngle: 0, endAngle: -Math.PI * 2 },
-            style: { fill: 'var(--panel-line, #e5e7eb)', opacity: 0.45 }
-          },
-          {
-            type: 'sector',
-            shape: {
-              cx, cy, r, r0,
-              startAngle: 0,
-              endAngle: -polarEndRadian,
-              cornerRadius: thickness / 2,
-              transition: 'endAngle',
-              enterFrom: { endAngle: 0 }
-            },
-            style: {
-              fill: progressFill,
+    chart.setOption({
+      series: [
+        {
+          type: 'gauge',
+          startAngle: 90,
+          endAngle: -270,
+          min: 0,
+          max: 100,
+          radius: '85%',
+          center: ['50%', '50%'],
+          pointer: { show: false },
+          progress: {
+            show: true,
+            overlap: false,
+            roundCap: true,
+            clip: false,
+            itemStyle: {
+              color: progressFill,
               shadowBlur: 18,
               shadowColor: status.color + '55',
               shadowOffsetY: 2
             }
           },
-          {
-            type: 'text',
-            extra: { valOnRadian, transition: 'valOnRadian', enterFrom: { valOnRadian: 0 } },
-            style: {
-              text: `${Math.round(valOnRadian)}%`,
-              fontSize: 24,
-              fontWeight: 800,
-              fontFamily: 'var(--mono, monospace)',
-              x: cx,
-              y: cy,
-              fill: 'var(--text, #111827)',
-              align: 'center',
-              verticalAlign: 'middle'
-            },
-            during: (apiDuring: any) => apiDuring.setStyle('text', `${Math.round(apiDuring.getExtra('valOnRadian'))}%`)
-          }
-        ]
-      };
-    };
-
-    chart.setOption({
-      animationDuration: 900,
-      animationDurationUpdate: 900,
-      animationEasingUpdate: 'backOut',
-      dataset: { source: [[1, availability]] },
-      angleAxis: { type: 'value', startAngle: 0, show: false, min: 0, max: 100 },
-      radiusAxis: { type: 'value', show: false },
-      polar: { radius: '100%', center: ['50%', '50%'] },
-      series: [{ type: 'custom', coordinateSystem: 'polar', renderItem }]
+          axisLine: {
+            lineStyle: {
+              width: 14,
+              color: [[1, 'var(--panel-line, #e5e7eb)']]
+            }
+          },
+          splitLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { show: false },
+          title: { show: false },
+          anchor: { show: false },
+          detail: {
+            valueAnimation: true,
+            width: '60%',
+            height: 24,
+            fontSize: 24,
+            fontWeight: 800,
+            fontFamily: 'var(--mono, monospace)',
+            color: 'var(--text, #111827)',
+            offsetCenter: [0, 0],
+            formatter: (value: number) => `${Math.round(value)}%`
+          },
+          data: [{ value: availability, name: status.label }],
+          animationDuration: 900,
+          animationDurationUpdate: 900,
+          animationEasingUpdate: 'backOut'
+        }
+      ]
     });
   }
 
@@ -562,9 +623,15 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   }
 
   // ============================================================
-  // ACTUALIZACIÓN PRINCIPAL
+  // ACTUALIZACIÓN PRINCIPAL CON VALIDACIÓN
   // ============================================================
   function updateBarsChart(): void {
+    const validTxs = getValidTransmitters();
+    if (validTxs.length === 0) {
+      updateStatusPie(0, 0, 0);
+      updateGaugeChart();
+      return;
+    }
     const counts = getStatusCounts();
     updateStatusPie(counts.ok, counts.warn, counts.crit);
     updateGaugeChart();
@@ -586,6 +653,7 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   window.closeStatsModal = closeStatsModal;
   window.__refreshStatsModal = refreshStatsModalIfOpen;
   window.initSidebarCharts = initSidebarCharts;
+  window.reinitSidebarCharts = reinitSidebarCharts;
 
   // ============================================================
   // CONFIGURACIÓN DE EVENTOS
@@ -631,24 +699,11 @@ const amCount = STATIONS.filter(s => s.band === 'AM').length;
   } else {
     onSplashReady(initSidebarCharts);
   }
-
-  // ============================================================
-  // NOTA: la sincronización de altura del sidebar con el mapa ya NO se
-  // hace aquí. Vivía un ResizeObserver (setupStrictSimetry) que le ponía
-  // a .sidebar una altura en línea con !important — eso siempre gana
-  // sobre cualquier regla de una hoja de estilos, así que pisaba en
-  // silencio las reglas de map.css/layout-edit.css (el sistema
-  // data-companion: 540px fuera de edición, 578px durante edición) sin
-  // que se notara por qué. Esa altura además se calculaba mal (medía
-  // #geo-map en vez de la sección completa). El redimensionado de las
-  // gráficas (gauge/pie) tras un cambio de disposición sigue funcionando
-  // igual: ya hay un listener de 'resize' más abajo, y layout-prefs.js
-  // dispara ese evento después de cada cambio de layout.
 </script>
 
 <style>
   /* ============================================================
-     ESTILOS DEL MODAL (Integración con tu modal.css)
+     ESTILOS DEL MODAL (Integración con tu modals.css)
      ============================================================ */
   #stats-overlay {
     display: none;

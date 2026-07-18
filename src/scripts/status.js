@@ -1,23 +1,21 @@
+// src/scripts/status.js
 // Calcula el estado (ok / warn / crit) de un transmisor a partir de sus métricas,
 // sus umbrales configurados, sus fases eléctricas y los equipos instalados/encendidos.
-// Editar SOLO este archivo para cambiar las reglas de qué cuenta como advertencia o crítico.
 
 import { EQUIPMENT_LABELS } from './data/stations.js';
 
 // Evalúa CADA parámetro por separado (ROE, temperatura, potencia, fases,
 // equipos) y junta todo en una sola lista de "motivos", cada uno con su
-// propia severidad (1 = advertencia, 2 = crítico). El estado final es la
-// severidad más alta encontrada — igual que antes — pero ahora también
-// sabemos CUÁLES motivos llegaron a esa severidad, para poder mostrarlos.
-//
-// Es intencional que un transmisor pueda tener varios motivos a la vez
-// (p. ej. ROE crítico Y temperatura en advertencia simultáneamente): al
-// final solo se muestran los motivos que están en la severidad máxima, así
-// el texto nunca contradice el color/estado general del transmisor.
+// propia severidad (1 = advertencia, 2 = crítico).
 export function evaluateStatus(tx) {
+  // --- VALIDACIÓN: Si tx es undefined o no tiene equipment, devolver ok ---
+  if (!tx || typeof tx !== 'object' || !tx.equipment) {
+    return { status: 'ok', reasons: [] };
+  }
+
   const eq = tx.equipment;
-  const pm = tx.config.phaseMonitoring;
-  const th = tx.thresholds;
+  const pm = tx.config?.phaseMonitoring || 0;
+  const th = tx.thresholds || { powerMin: 72, vswrMax: 1.5, tempMax: 42 };
   const reasons = [];
 
   const critVswr = th.vswrMax + 0.3;
@@ -39,9 +37,11 @@ export function evaluateStatus(tx) {
   }
 
   for (const [key, eqState] of Object.entries(eq)) {
-    if (!eqState.installed || eqState.on) continue;
+    if (!eqState || !eqState.installed || eqState.on) continue;
     const label = EQUIPMENT_LABELS[key];
-    reasons.push({ severity: label.critical ? 2 : 1, text: `${label.name} apagado` });
+    if (label) {
+      reasons.push({ severity: label.critical ? 2 : 1, text: `${label.name} apagado` });
+    }
   }
 
   const maxSeverity = reasons.reduce((m, r) => Math.max(m, r.severity), 0);

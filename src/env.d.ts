@@ -24,11 +24,13 @@ declare global {
     // Ventana flotante de estadísticas
     openStatsModal?: () => void;
     initSidebarCharts?: () => void | Promise<void>;
+    reinitSidebarCharts?: () => void;
     closeStatsModal?: () => void;
     __refreshStatsModal?: () => void;
     
     // Otras funciones globales (ya existentes)
     openDetail?: (id: number | string) => void;
+    closeSettings?: () => void;
     closeDetail?: () => void;
   }
 }

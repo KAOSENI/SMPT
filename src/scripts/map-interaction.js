@@ -54,12 +54,16 @@ export function setupMapInteraction() {
       if (Math.sqrt(dx * dx + dy * dy) < 15) {
         found = true;
         const s = statusOf(txState);
+        
+        // 1. PRIMERO: Leer (antes de modificar el DOM)
+        const rect = svg.getBoundingClientRect();
+        
+        // 2. LUEGO: Modificar el DOM
         ttName.textContent = txState.shortName;
         ttDetail.textContent = `${txState.call} · ${txState.freq} · ${txState.municipio}`;
         ttStatus.textContent = s === 'ok' ? 'Normal' : s === 'warn' ? 'Advertencia' : 'Crítico';
         ttStatus.className = `tt-status ${s}`;
 
-        const rect = svg.getBoundingClientRect();
         const tooltipX = e.clientX - rect.left + 14;
         const tooltipY = e.clientY - rect.top - 10;
         tooltip.style.left = Math.min(tooltipX, rect.width - 200) + 'px';
@@ -95,10 +99,14 @@ export function setupMapInteraction() {
 
   svg.addEventListener('pointermove', function (e) {
     if (!dragging) return;
+    
+    // 1. PRIMERO: Leer
+    const rect = svg.getBoundingClientRect();
+    
+    // 2. LUEGO: Procesar
     const dx = e.clientX - lastX;
     const dy = e.clientY - lastY;
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
-    const rect = svg.getBoundingClientRect();
     const scaleFactor = MAP_W / rect.width;
     mapView.x += dx * scaleFactor;
     mapView.y += dy * scaleFactor;

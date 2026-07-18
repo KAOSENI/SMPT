@@ -6,16 +6,21 @@ import { statusOf } from './status.js';
 
 export let eventLog = [];
 export const MAX_EVENTS = 100;
-// Mostrar solo los 7 eventos más recientes
 export const DISPLAY_EVENTS = 10;
 
 export function addEvent(txId, status, message) {
-  const tx = state[txId];
+  // --- VALIDACIÓN: Si el transmisor no existe, no agregar evento ---
+  const tx = state.find(s => s.id === txId);
+  if (!tx) {
+    // Si el transmisor ya no existe, simplemente ignoramos el evento
+    return;
+  }
+
   const time = new Date();
   const event = {
     id: eventLog.length,
     txId: txId,
-    txName: tx.shortName,
+    txName: tx.shortName || tx.call || 'Desconocido',
     status: status,
     message: message,
     time: time,
@@ -23,8 +28,18 @@ export function addEvent(txId, status, message) {
   };
   eventLog.unshift(event);
   if (eventLog.length > MAX_EVENTS) eventLog.pop();
+  
+  // Limpiar eventos de transmisores que ya no existen (al eliminar)
+  cleanupOrphanEvents();
+  
   renderSidebarEvents();
   updateSidebarStats();
+}
+
+// --- LIMPIAR EVENTOS DE TRANSMISORES ELIMINADOS ---
+function cleanupOrphanEvents() {
+  const validIds = new Set(state.map(tx => tx.id));
+  eventLog = eventLog.filter(e => validIds.has(e.txId));
 }
 
 export function renderSidebarEvents() {
@@ -32,6 +47,9 @@ export function renderSidebarEvents() {
   const countEl = document.getElementById('sidebar-event-count');
 
   if (!container || !countEl) return;
+
+  // Limpiar eventos huérfanos antes de renderizar
+  cleanupOrphanEvents();
 
   countEl.textContent = `${eventLog.length} eventos`;
 
@@ -43,35 +61,43 @@ export function renderSidebarEvents() {
     return;
   }
 
-  // Mostrar solo los últimos DISPLAY_EVENTS (5) eventos
   const eventsToShow = eventLog.slice(0, DISPLAY_EVENTS);
 
-  // openDetail se expone en window (ver main.js) porque este HTML se inserta como
-  // texto (innerHTML), así que el onclick solo puede resolver funciones globales.
-  container.innerHTML = eventsToShow.map(e => `
-    <div class="sidebar-event" style="cursor:pointer;" onclick="openDetail(${e.txId})">
-      <span class="ev-time">${e.timeStr}</span>
-      <span class="ev-dot ${e.status}"></span>
-      <span class="ev-msg">
-        <span class="${e.status}">${e.txName}</span>
-        ${e.message}
-      </span>
-    </div>
-  `).join('');
+  container.innerHTML = eventsToShow.map(e => {
+    // Verificar que el transmisor aún exista antes de crear el enlace
+    const exists = state.some(s => s.id === e.txId);
+    const clickHandler = exists ? `onclick="openDetail(${e.txId})"` : '';
+    return `
+      <div class="sidebar-event" style="cursor:${exists ? 'pointer' : 'default'}; opacity:${exists ? 1 : 0.5};" ${clickHandler}>
+        <span class="ev-time">${e.timeStr}</span>
+        <span class="ev-dot ${e.status}"></span>
+        <span class="ev-msg">
+          <span class="${e.status}">${e.txName}</span>
+          ${e.message}
+        </span>
+      </div>
+    `;
+  }).join('');
 
   container.scrollTop = 0;
 }
 
 export function updateSidebarStats() {
+  // Filtrar solo transmisores válidos
+  const validTxs = state.filter(tx => tx && typeof tx === 'object' && tx.equipment);
+  
   let ok = 0, warn = 0, crit = 0;
-  state.forEach(tx => {
-    const s = statusOf(tx);
-    if (s === 'ok') ok++;
-    else if (s === 'warn') warn++;
-    else crit++;
+  validTxs.forEach(tx => {
+    try {
+      const s = statusOf(tx);
+      if (s === 'ok') ok++;
+      else if (s === 'warn') warn++;
+      else crit++;
+    } catch {
+      // Ignorar errores de status
+    }
   });
 
-  // Actualizar elementos del sidebar
   const okEl = document.getElementById('sidebar-ok');
   const warnEl = document.getElementById('sidebar-warn');
   const critEl = document.getElementById('sidebar-crit');
@@ -81,16 +107,22 @@ export function updateSidebarStats() {
   if (okEl) okEl.textContent = ok;
   if (warnEl) warnEl.textContent = warn;
   if (critEl) critEl.textContent = crit;
-  if (totalEl) totalEl.textContent = state.length;
+  if (totalEl) totalEl.textContent = validTxs.length;
+
+  // Limpiar eventos huérfanos
+  cleanupOrphanEvents();
 
   if (eventLog.length > 0 && lastEl) {
     lastEl.textContent = eventLog[0].timeStr;
   }
 
-  // ============================================================
-  // ACTUALIZAR GRÁFICA DE BARRAS (si existe)
-  // ============================================================
   if (window.updateBarsChart) {
     window.updateBarsChart();
   }
+}
+
+// --- EXPONER FUNCIONES PARA LIMPIEZA DESDE FUERA ---
+export function cleanupEvents() {
+  cleanupOrphanEvents();
+  renderSidebarEvents();
 }

@@ -1,3 +1,4 @@
+// src/scripts/detail.js
 // Ventana de datos de un transmisor (solo lectura + encendido/apagado de equipos
 // YA instalados). Habilitar/deshabilitar equipos vive en settings.js.
 
@@ -18,6 +19,17 @@ function disposeCharts() {
   disposeLineChart(chartInstances.vswr);
   disposeLineChart(chartInstances.temp);
   chartInstances = { power: null, vswr: null, temp: null };
+}
+
+// --- FUNCIÓN DE VALIDACIÓN ---
+function getValidTx(id) {
+  const tx = state.find(s => s.id === id);
+  if (!tx) {
+    // Si el transmisor no existe, cerrar el detalle
+    closeDetail();
+    return null;
+  }
+  return tx;
 }
 
 // --- FUNCIONES DE GENERACIÓN DE HTML ---
@@ -177,7 +189,7 @@ function equipmentListHtml(tx) {
             </svg>
           </span>
           <span>Ningún equipo instalado</span>
-          <span class="detail-equipment-hint">Configura los equipos desde el botón "Configuración"</span>
+          <span class="detail-equipment-hint">Configura los equipos desde el botón Configuración</span>
         </div>
       </div>`;
   }
@@ -268,9 +280,15 @@ function eventsListHtml(id) {
 }
 
 export function openDetail(id) {
+  // --- VALIDACIÓN: Si el transmisor no existe, cerrar ---
+  const tx = state.find(s => s.id === id);
+  if (!tx) {
+    closeDetail();
+    return;
+  }
+
   const isNewTransmitter = openDetailId !== id;
   openDetailId = id;
-  const tx = state[id];
   const s = statusOf(tx);
   const overlay = document.getElementById('overlay');
   const content = document.getElementById('detail-content');
@@ -384,7 +402,14 @@ export function openDetail(id) {
 
 export function updateDetailValues(id) {
   if (openDetailId !== id) return;
-  const tx = state[id];
+  
+  // --- VALIDACIÓN: Si el transmisor ya no existe, cerrar ---
+  const tx = state.find(s => s.id === id);
+  if (!tx) {
+    closeDetail();
+    return;
+  }
+  
   const s = statusOf(tx);
 
   const metricsEl = document.getElementById('detail-metrics');

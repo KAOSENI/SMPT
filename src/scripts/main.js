@@ -11,19 +11,20 @@ import { renderGrid } from './grid.js';
 import { updateSidebarStats } from './events.js';
 import { tick, TICK_INTERVAL_MS } from './tick.js';
 import { openDetail, closeDetail } from './detail.js';
-import { closeSettings } from './settings.js';
+// Cambiada la importación para traer la función con validación de cambios
+import { closeSettingsWithAnimation, openSettings } from './settings.js';
 // Importar dashboard para inicialización
 import { initDashboard } from './dashboard.js';
 import { openAbout } from './about.js';
 import { registerServiceWorker } from './pwa.js';
 import { initLayout } from './layout-prefs.js';
-import { closeLayoutModal } from './layout-modal.js';
 import { onSplashReady } from './splash-ready.js';
 import { initLayoutDnd } from './layout-dnd.js';
 
 // El HTML generado por eventos.js (bitácora) y map.js (clusters) usa
 // onclick="openDetail(id)" como texto plano, así que necesita existir en window.
 window.openDetail = openDetail;
+window.closeSettings = closeSettingsWithAnimation;
 
 // Cierre de las ventanas modales: clic fuera del panel, o tecla Escape
 // (si la ventana de Configuración está encima, Escape la cierra primero).
@@ -31,14 +32,11 @@ document.getElementById('overlay').addEventListener('click', e => {
   if (e.target.id === 'overlay') closeDetail();
 });
 document.getElementById('settings-overlay').addEventListener('click', e => {
-  if (e.target.id === 'settings-overlay') closeSettings();
-});
-document.getElementById('layout-overlay')?.addEventListener('click', e => {
-  if (e.target.id === 'layout-overlay') closeLayoutModal();
+  if (e.target.id === 'settings-overlay') closeSettingsWithAnimation();
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  if (document.getElementById('settings-overlay').classList.contains('open')) closeSettings();
+  if (document.getElementById('settings-overlay').classList.contains('open')) closeSettingsWithAnimation();
   else closeDetail();
 });
 
@@ -47,6 +45,7 @@ setTheme(loadTheme() || 'light');
 wireThemeButtons();
 
 document.getElementById('about-btn')?.addEventListener('click', openAbout);
+document.getElementById('global-settings-btn')?.addEventListener('click', () => openSettings());
 
 // El botón de disposición ahora activa el modo de edición (arrastrar
 // secciones) en vez de abrir directamente la ventana de "secciones

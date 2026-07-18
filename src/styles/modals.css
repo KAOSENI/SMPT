@@ -1,0 +1,102 @@
+/* ===== MODALES - IMPORTACIÓN MODULAR ===== */
+/* Este archivo sustituye al antiguo modal.css */
+/* Los estilos están divididos en archivos más pequeños */
+
+@import './modals/overlay.css';
+@import './modals/modal-base.css';
+@import './modals/detail-modal.css';
+@import './modals/settings-modal.css';
+@import './components/buttons.css';
+@import './components/switches.css';
+
+/* ================================================================
+   ===== VISTA ESCRITORIO UNIFICADA (RESPONSIVE) =====
+   ================================================================ */
+@media (min-width: 860px) {
+  /* 1. Ampliamos el ancho máximo de los contenedores principales en escritorio */
+  #detail-content,
+  #settings-content {
+    max-width: 900px !important;
+  }
+
+  /* 2. Grid de dos columnas para los detalles del Transmisor (Panel Principal) */
+  .detail-body {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 28px;
+    row-gap: 18px;
+    align-items: start;
+    grid-template-areas:
+      "metrics equipment"
+      "phase equipment"
+      "history events";
+  }
+
+  /* ================================================================
+     ===== DISTRIBUCIÓN EXCLUSIVA: PESTAÑA SISTEMA =====
+     ================================================================ */
+  [data-settings-pane="sistema"] .settings-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+
+  /* ================================================================
+     ===== DISTRIBUCIÓN EXCLUSIVA: PESTAÑA INTERFAZ =====
+     ================================================================ */
+  
+  /* Liberamos el contenedor de Interfaz para que aproveche todo el ancho del modal */
+  [data-settings-pane="interfaz"] {
+    max-width: 100% !important;
+  }
+
+  /* Dividimos el cuerpo de Interfaz en 2 columnas asimétricas */
+  [data-settings-pane="interfaz"] .settings-body {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr; /* Izquierda (Secciones) | Derecha (Notificaciones) */
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* Columna Izquierda: Bloque de "Secciones visibles" */
+  [data-settings-pane="interfaz"] .settings-body .settings-section:nth-of-type(1) {
+    grid-column: 1;
+  }
+
+  /* Columna Derecha: Bloque de "Notificaciones" */
+  [data-settings-pane="interfaz"] .settings-body .settings-section:nth-of-type(2) {
+    grid-column: 2;
+  }
+
+  /* Transformamos las 4 opciones de posición de notificaciones en una cuadrícula real de 2x2 */
+  [data-settings-pane="interfaz"] .position-options,
+  [data-settings-pane="interfaz"] .notification-position-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  /* Banner Inferior: Bloque de "Disposición de la página" (Cruza de lado a lado) */
+  [data-settings-pane="interfaz"] .settings-section-disposition,
+  [data-settings-pane="interfaz"] .settings-body .settings-section:nth-of-type(3),
+  [data-settings-pane="interfaz"] .settings-body .info-note {
+    grid-column: 1 / span 2; /* Se expande cubriendo ambas columnas */
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Texto explicativo a la izquierda, botón a la derecha */
+    gap: 24px;
+    padding: 16px;
+    background: var(--surface-2);
+    border: 1px dashed var(--phosphor-dim);
+    border-radius: 8px;
+  }
+
+  /* Evita que el botón de edición se encoja o deforme dentro del flexbox del banner */
+  [data-settings-pane="interfaz"] .settings-body .info-note button,
+  [data-settings-pane="interfaz"] .settings-body .settings-section:nth-of-type(3) button {
+    flex-shrink: 0;
+    margin: 0;
+  }
+}

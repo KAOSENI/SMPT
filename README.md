@@ -68,7 +68,7 @@ cada apartado por separado y desplegarlo automáticamente en GitHub Pages.
 | **TypeScript (modo estricto)** | Chequeo de tipos en los `.astro` y en `src/env.d.ts` (declaraciones globales de `window`). |
 | **[ECharts](https://echarts.apache.org/)** | Todas las gráficas: mini-históricos de tarjeta, gráficas de detalle, gauge/dona del panel lateral. |
 | **[Lucide (@lucide/astro)](https://lucide.dev/)** | Iconografía SVG en los componentes `.astro`. |
-| **CSS puro** | Sin framework de estilos; un archivo por apartado en `src/styles/*.css`. |
+| **CSS puro** | Sin framework de estilos; un archivo por apartado en `src/styles/*.css`, organizado de forma modular. |
 | **SVG a mano** | Contorno de Chiapas en el mapa, sin librería de mapas externa. |
 | **Service Worker** (Vanilla, sin librerías) | Cachea recursos sobre la marcha para que el panel cargue instalado/offline. Ver `public/sw.js`. |
 | **Vite** | Motor de build/dev-server de Astro (bundling, hot-reload). |
@@ -118,12 +118,29 @@ apartado vive en su propio archivo:
 | Los tres temas de color (Claro/Fósforo/Oscuro) | `src/styles/theme.css`, `src/scripts/theme.js` |
 | El favicon, PWA e íconos de instalación | `public/site.webmanifest`, `public/favicon*`, `src/layouts/Layout.astro` |
 | El comportamiento offline / caché del service worker | `public/sw.js`, `src/scripts/pwa.js` |
-| El diseño/CSS de una sección (mapa, sidebar, tarjetas, modales...) | `src/styles/*.css` (un archivo por apartado) |
+| **El diseño/CSS de los modales** | `src/styles/modals.css` (archivo principal) |
+| **El overlay de los modales** | `src/styles/modals/overlay.css` |
+| **La base de los modales** | `src/styles/modals/modal-base.css` |
+| **El modal de detalle del transmisor** | `src/styles/modals/detail-modal.css` |
+| **El modal de configuración** | `src/styles/modals/settings-modal.css` |
+| **Los botones** | `src/styles/components/buttons.css` |
+| **Los switches/toggles** | `src/styles/components/switches.css` |
+| El diseño/CSS de otras secciones (mapa, sidebar, tarjetas...) | `src/styles/*.css` (un archivo por apartado) |
 | El HTML de una sección de la página | `src/components/*.astro` |
 | El orden de las secciones en la página | `src/pages/index.astro` |
 
 Todo lo demás (cómo se conectan los módulos entre sí, la inicialización) vive
 en `src/scripts/main.js`, con comentarios explicando cada import.
+
+> **Nota sobre los estilos CSS:** Los estilos de los modales están organizados
+> de forma modular para facilitar el mantenimiento. El archivo principal
+> `src/styles/modals.css` importa los estilos específicos de cada componente:
+> - `modals/overlay.css` — Fondo y capa del modal
+> - `modals/modal-base.css` — Estructura base común
+> - `modals/detail-modal.css` — Panel de detalle del transmisor
+> - `modals/settings-modal.css` — Panel de configuración
+> - `components/buttons.css` — Botones reutilizables
+> - `components/switches.css` — Toggles y switches
 
 > **Nota sobre las gráficas en vivo:** se montan **una sola vez** como
 > instancias vivas de ECharts; en cada tick solo reciben datos nuevos con

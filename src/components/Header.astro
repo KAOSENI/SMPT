@@ -1,9 +1,9 @@
 ---
 // src/components/Header.astro
 // Header sin contadores visibles, pero con IDs ocultos para compatibilidad
-// Mantiene: marca, título, selector de temas, reloj, badge "Sistema Chiapaneco" y botón Acerca de
+// Mantiene: marca, título, reloj, badge "Sistema Chiapaneco" y botón Acerca de
 
-import { Sun, Moon, Lamp, Clock, Info, LayoutGrid } from '@lucide/astro';
+import { Clock, Info, Settings } from '@lucide/astro';
 
 // El proyecto se despliega bajo una subruta (base: '/SMPT/' en astro.config.mjs),
 // así que los assets de /public deben resolverse con BASE_URL.
@@ -41,30 +41,14 @@ const base = import.meta.env.BASE_URL;
       <span class="live-dot"></span>
     </div>
 
-    <!-- Selector de temas + Acerca de -->
+    <!-- Botón Configuración -->
     <div class="header-actions">
-      <div class="theme-switch-group">
-        <span class="theme-switch-label">Tema</span>
-        <div class="theme-switch" role="group" aria-label="Tema visual">
-          <button class="theme-btn" data-theme-btn="light" aria-pressed="true" title="Claro">
-            <Sun size={16} stroke-width={2} />
-          </button>
-          <button class="theme-btn" data-theme-btn="phosphor" aria-pressed="false" title="Fósforo">
-            <Lamp size={16} stroke-width={2} />
-          </button>
-          <button class="theme-btn" data-theme-btn="dark" aria-pressed="false" title="Oscuro">
-            <Moon size={16} stroke-width={2} />
-          </button>
-        </div>
-      </div>
-
-      <!-- Botón Disposición de la página -->
-      <button class="header-btn about-btn" id="layout-btn" aria-label="Editar disposición de la página" title="Arrastrar para reacomodar las secciones">
-        <LayoutGrid size={18} stroke-width={2} />
+      <button class="header-btn" id="global-settings-btn" aria-label="Configuración" title="Configuración del sistema">
+        <Settings size={18} stroke-width={2} />
       </button>
 
       <!-- Botón Acerca de -->
-      <button class="header-btn about-btn" id="about-btn" aria-label="Acerca de" title="Acerca de este sistema">
+      <button class="header-btn" id="about-btn" aria-label="Acerca de" title="Acerca de este sistema">
         <Info size={18} stroke-width={2} />
       </button>
     </div>
@@ -209,7 +193,7 @@ const base = import.meta.env.BASE_URL;
     flex-wrap: wrap;
   }
 
-  /* Contenedor de acciones del header (tema + acerca de) */
+  /* Contenedor de acciones del header */
   .header-actions {
     display: flex;
     align-items: center;
@@ -266,60 +250,8 @@ const base = import.meta.env.BASE_URL;
     50% { opacity: 0.3; transform: scale(0.8); }
   }
 
-  /* Theme switch */
-  .theme-switch-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .theme-switch-label {
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-dim, #667169);
-    white-space: nowrap;
-  }
-
-  .theme-switch {
-    display: flex;
-    gap: 2px;
-    background: var(--surface-2, #eef1f0);
-    padding: 3px;
-    border-radius: 8px;
-    border: 1px solid var(--panel-line, #dde3e0);
-  }
-
-  .theme-btn {
-    background: transparent;
-    border: none;
-    padding: 0.3rem 0.6rem;
-    border-radius: 6px;
-    cursor: pointer;
-    color: var(--text-dim, #667169);
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .theme-btn :global(svg) {
-    stroke: currentColor;
-  }
-
-  .theme-btn[aria-pressed="true"] {
-    background: var(--panel, #ffffff);
-    color: var(--text, #121815);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  }
-
-  .theme-btn:hover:not([aria-pressed="true"]) {
-    color: var(--text, #121815);
-    background: rgba(0, 0, 0, 0.04);
-  }
-
-  /* Botón Acerca de */
-  .about-btn {
+  /* Botones del header */
+  .header-btn {
     background: transparent;
     border: 1px solid var(--panel-line, #dde3e0);
     border-radius: 8px;
@@ -334,18 +266,18 @@ const base = import.meta.env.BASE_URL;
     width: 34px;
   }
 
-  .about-btn :global(svg) {
+  .header-btn :global(svg) {
     stroke: currentColor;
   }
 
-  .about-btn:hover {
+  .header-btn:hover {
     color: var(--text, #121815);
     background: var(--surface-2, #eef1f0);
     border-color: var(--text-dim, #667169);
     transform: scale(1.05);
   }
 
-  .about-btn:active {
+  .header-btn:active {
     transform: scale(0.95);
   }
 
@@ -411,26 +343,13 @@ const base = import.meta.env.BASE_URL;
       display: none;
     }
 
-    .theme-switch-label {
-      display: none;
-    }
-
-    .theme-btn {
-      padding: 0.2rem 0.4rem;
-    }
-
-    .theme-btn :global(svg) {
-      width: 14px;
-      height: 14px;
-    }
-
-    .about-btn {
+    .header-btn {
       height: 28px;
       width: 28px;
       padding: 0.2rem 0.4rem;
     }
 
-    .about-btn :global(svg) {
+    .header-btn :global(svg) {
       width: 14px;
       height: 14px;
     }
@@ -479,22 +398,13 @@ const base = import.meta.env.BASE_URL;
       height: 4px;
     }
 
-    .theme-btn {
-      padding: 0.15rem 0.3rem;
-    }
-
-    .theme-btn :global(svg) {
-      width: 12px;
-      height: 12px;
-    }
-
-    .about-btn {
+    .header-btn {
       height: 24px;
       width: 24px;
       padding: 0.15rem 0.3rem;
     }
 
-    .about-btn :global(svg) {
+    .header-btn :global(svg) {
       width: 12px;
       height: 12px;
     }

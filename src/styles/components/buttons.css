@@ -1,0 +1,112 @@
+/* ===== BOTONES DE ACCIÓN ===== */
+.detail-action-btn,
+.settings-close-btn,
+.detail-header .close-btn, 
+.stats-header .stats-close {
+  background: none;
+  border: 1px solid var(--panel-line);
+  color: var(--text-dim);
+  border-radius: 5px;
+  height: 28px;
+  width: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  font-size: 11px;
+  font-family: var(--sans);
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+
+.detail-action-btn:hover,
+.detail-header .close-btn:hover, 
+.stats-header .stats-close:hover,
+.settings-close-btn:hover {
+  color: #ffffff !important;
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  transform: rotate(90deg);
+}
+
+.settings-close-btn:active {
+  transform: rotate(180deg) scale(0.9);
+}
+
+.detail-action-btn.settings-btn,
+.detail-header button#settings-btn {
+  width: auto !important;
+  padding: 0 10px !important;
+  font-size: 11px !important;
+  transform: none !important;
+}
+
+.detail-action-btn.settings-btn:hover,
+.detail-header button#settings-btn:hover {
+  color: var(--text) !important;
+  border-color: var(--phosphor-dim) !important;
+  background: var(--surface-2) !important;
+  transform: none !important;
+}
+
+/* ===== BOTONES DE CONFIGURACIÓN ===== */
+.btn-secondary,
+.btn-primary {
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-secondary {
+  background: var(--surface-2);
+  border: 1px solid var(--panel-line);
+  color: var(--text-dim);
+}
+.btn-secondary:hover {
+  background: var(--panel);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: var(--phosphor-dim);
+  color: var(--bg);
+}
+.btn-primary:hover {
+  background: var(--phosphor);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.btn-primary:active {
+  transform: translateY(0px);
+}
+
+/* Estado con cambios sin guardar */
+.btn-primary.has-changes {
+  background: var(--amber);
+  animation: pulse-save 1.5s ease-in-out infinite;
+}
+.btn-primary.has-changes::after {
+  content: " *";
+}
+.btn-primary.has-changes:hover {
+  background: var(--amber);
+  filter: brightness(1.1);
+}
+
+@keyframes pulse-save {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+  }
+}

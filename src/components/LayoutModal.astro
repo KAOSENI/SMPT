@@ -1,15 +1,13 @@
 ---
-// Ventana de "Secciones visibles" (contenido generado por layout-modal.js,
-// ver openLayoutModal) y la barra flotante del modo de edición por
-// arrastre (ver layout-dnd.js) — se muestran juntas porque ambas dependen
-// del mismo botón "Disposición de la página" del encabezado.
+// Barra flotante del modo de edición por arrastre (ver layout-dnd.js).
+// Antes también vivía aquí la ventana "Secciones visibles" con su propio
+// overlay — se quitó porque quedaba duplicada con la pestaña Interfaz del
+// modal de Configuración (ver settings.js), que es ahora el único lugar
+// para eso. El botón para ENTRAR a este modo de edición también vive en
+// esa pestaña ("Editar disposición"), así que aquí solo queda la barra de
+// mientras se está arrastrando, con su botón para salir.
 ---
-<div class="overlay" id="layout-overlay">
-  <div class="detail" id="layout-modal-content"></div>
-</div>
-
 <div class="layout-edit-toolbar" id="layout-edit-toolbar">
   <span>Arrastra el ⠿ de cada sección para reacomodarla</span>
-  <button type="button" id="layout-edit-visibility-btn">Secciones visibles</button>
   <button type="button" class="primary" id="layout-edit-done-btn">Listo</button>
 </div>

@@ -1,8 +1,6 @@
-/* MODO DE EDICIÓN DE DISPOSICIÓN (arrastrar y soltar) */
-/* Ver src/scripts/layout-dnd.js para la lógica; aquí solo el aspecto
-   visual. Todo esto permanece oculto (display:none / pointer-events:none)
-   hasta que <html> tiene la clase "layout-editing", que se activa desde el
-   botón de disposición en el encabezado. */
+/* ============================================================
+   MODO DE EDICIÓN DE DISPOSICIÓN (Arrastrar y Soltar)
+   ============================================================ */
 
 .layout-drag-handle {
   display: none;
@@ -11,36 +9,24 @@
 /* 1. Sección de edición general */
 html.layout-editing .layout-section {
   position: relative;
-  /* 
-    CORRECCIÓN: Usamos un color distintivo del tema (--phosphor-dim) en lugar de un gris apagado.
-    Forzamos a que la transición del contorno sea instantánea (0s) para evitar que hojas de estilo
-    externas o globales atenúen el borde punteado transcurrido un segundo.
-  */
   outline: 2px dashed var(--phosphor-dim);
   outline-offset: 6px;
   border-radius: 8px;
   transition: outline 0s !important;
 }
 
-/* 2. PARCHE ESPECÍFICO PARA EL MAPA:
-   - Forzamos "height: fit-content" para que la sección del mapa no se estire de más 
-     a lo alto (igualando a la sección compañera de al lado en el flexbox). 
-     Así el borde punteado abraza perfectamente el final del mapa y la leyenda.
-   - Aplicamos el redondeado y recorte exacto a la caja del mapa para que la leyenda
-     inferior no se desborde de las esquinas. */
+/* 2. Parche específico para el mapa de Chiapas */
 html.layout-editing #layout-section-map {
   height: fit-content !important;
-  align-self: start; /* Evita que se estire verticalmente si tiene un vecino alto */
+  align-self: start; 
 }
 
 html.layout-editing #geo-map {
-  border-radius: 6px; /* Ajuste sutil para que encaje dentro de los 8px de la sección */
-  overflow: clip;     /* Recorta la leyenda y controles para que no pisen la esquina */
+  border-radius: 6px; 
+  overflow: clip;     
 }
 
-/* Mientras se arrastra una sección, deshabilita los clics dentro de ella
-   (tarjetas, mapa, botones) para que no se abran modales ni el mapa
-   capture el gesto — solo debe importar el arrastre. */
+/* Deshabilitar eventos internos durante arrastre */
 html.layout-editing .layout-section > :not(.layout-drag-handle) {
   pointer-events: none;
 }
@@ -74,24 +60,18 @@ html.layout-editing .layout-drag-handle {
   line-height: 1;
 }
 
-/* Sección que se está arrastrando en este momento: no solo atenuada — el
-   contorno también cambia al color del tema, para que quede claro CUÁL
-   sección está "pegada" al cursor (el fantasma que sigue al puntero es
-   pequeño y fácil de perder de vista si solo hay atenuación). */
+/* Sección arrastrándose activamente */
 .layout-section.layout-dragging {
   opacity: 0.35;
   outline-style: dashed;
   outline-color: var(--phosphor);
 }
 
-/* Fantasma que sigue al puntero mientras se arrastra (clon del contenido
-   del handle: grip + nombre de la sección). position:fixed + left/top
-   actualizados en cada pointermove desde layout-dnd.js; translate(-50%,-50%)
-   centra el fantasma justo debajo del dedo/cursor. */
+/* Elemento fantasma que sigue al cursor */
 .layout-drag-ghost {
   position: fixed;
   z-index: 80;
-  display: fixed;
+  display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
@@ -107,14 +87,7 @@ html.layout-editing .layout-drag-handle {
   transition: transform 0.08s ease;
 }
 
-/* Sección que quedaría debajo del puntero si se soltara ahora: no solo un
-   contorno, también un color de fondo (igual que el resto de "esto se
-   puede soltar aquí" del resto de la app) para que sea obvio a distancia,
-   sin tener que fijarse en el borde. Usa color-mix() con --phosphor (no un
-   color fijo) para que el resaltado sea siempre el color real del tema
-   activo — antes el fondo era un azul fijo que no combinaba con el
-   contorno en los temas Claro/Fósforo (donde --phosphor es verde/turquesa,
-   no azul), y el resultado se sentía apagado en vez de un resaltado claro. */
+/* Destino potencial de soltado */
 .layout-section.layout-drop-target {
   outline: 2px solid var(--phosphor);
   outline-offset: 6px;
@@ -124,12 +97,7 @@ html.layout-editing .layout-drag-handle {
   position: relative;
 }
 
-/* Barra que marca de qué LADO del destino quedaría el elemento arrastrado
-   (antes = izquierda/arriba, después = derecha/abajo — según en qué mitad
-   del destino esté el puntero, ver resolveInsertAfter() en
-   layout-dnd.js). Antes solo había un contorno alrededor de TODA la
-   sección, sin indicar el lado — de ahí la ambigüedad al intentar poner
-   algo a la izquierda vs. a la derecha del mapa. */
+/* Indicadores visuales de inserción (Antes / Después) */
 .layout-section.layout-drop-before::after,
 .layout-section.layout-drop-after::after {
   content: '';
@@ -154,6 +122,7 @@ html.layout-editing .layout-drag-handle {
   width: 4px;
 }
 
+/* Barra de herramientas inferior de edición */
 .layout-edit-toolbar {
   display: none;
   position: fixed;
@@ -200,46 +169,32 @@ html.layout-editing .layout-edit-toolbar {
 .layout-edit-toolbar button.primary {
   background: var(--phosphor);
   border-color: var(--phosphor);
-  color: #fff;
+  color: #ffffff;
 }
 
-@media (max-width: 480px) {
-  .layout-edit-toolbar {
-    left: 16px;
-    right: 16px;
-    bottom: 12px;
-    transform: none;
-  }
+html[data-theme="phosphor"] .layout-edit-toolbar button.primary {
+  color: #0a1512; 
+}
+
+html[data-theme="dark"] .layout-edit-toolbar button.primary {
+  color: #12141a; 
+}
+
+.layout-edit-toolbar button.primary:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
 }
 
 /* ============================================================
-   3. SIMETRÍA MATEMÁTICA Y CORRECCIÓN DE ALTURAS PARA EDICIÓN
+   3. SIMETRÍA MATEMÁTICA Y CORRECCIÓN DE ALTURAS
    ============================================================ */
 
-/* Al entrar en edición, cambiamos el contenedor a Flexbox vertical
-   únicamente para las secciones afectadas en el DOM real (#layout-section-sidebar 
-   y #layout-section-grid), permitiendo que el tirador y el componente
-   se ordenen uno debajo del otro de manera fluida sin deformar las cajas. */
 html.layout-editing #layout-section-sidebar,
 html.layout-editing #layout-section-grid {
   display: flex !important;
   flex-direction: column !important;
 }
 
-/* ============================================================
-   4. SIMETRÍA CON EL MAPA DURANTE LA EDICIÓN
-   ============================================================ */
-
-/* El mapa es de tamaño fijo (540px). Mientras se edita mide 578px (540 +
-   28px del tirador ⠿ + 10px de su margen inferior — ver el parche #2 de
-   arriba, que fuerza height:fit-content en la sección del mapa para que
-   el contorno punteado abrace justo ese total). El panel que quede a su
-   lado (lateral o cuadrícula, el que sea el "companion" — ver
-   data-companion en map.css) debe medir EXACTAMENTE lo mismo para que se
-   vea simétrico. Mismo punto de quiebre (951px) que usa map.css para la
-   altura normal (fuera de edición) y que @media (max-width: 950px) usa
-   para apilar todo en vertical — por debajo de eso no hay "al lado del
-   mapa" que igualar, así que esta regla no debe aplicar ahí. */
 @media (min-width: 951px) {
   html.layout-editing[data-companion="sidebar"] #layout-section-sidebar,
   html.layout-editing[data-companion="grid"] #layout-section-grid {
@@ -248,32 +203,11 @@ html.layout-editing #layout-section-grid {
   }
 }
 
-/* Forzamos al elemento hijo real (.sidebar y .transmitter-grid o #grid)
-   a encogerse exactamente los 48px correspondientes al tirador superior,
-   respetando las dimensiones calculadas dinámicamente y habilitando scroll
-   interno si el contenido excede el espacio. */
-/* El selector de abajo elegía TODOS los hijos de #layout-section-grid
-   menos el tirador — eso incluía sin querer a .grid-section-title (el
-   rótulo "Transmisores"), que también terminaba estirado a
-   calc(100% - 48px). Resultado: un hueco en blanco enorme donde debería
-   estar el título, y las tarjetas apretadas en lo poco que quedaba.
-
-   Se fija el título (y el tirador) a su alto natural con flex:0 0 auto, y
-   solo #grid / .sidebar crece con flex:1 para ocupar lo que sobra —
-   dejando que flexbox reparta el espacio solo, en vez de restar un número
-   fijo (48px) que no contaba la altura real del título y se desbordaba. */
 html.layout-editing .layout-drag-handle,
 html.layout-editing #layout-section-grid > .grid-section-title {
   flex: 0 0 auto !important;
 }
 
-/* Mismo patrón que el título de "Transmisores" arriba: dentro de .sidebar
-   hay una tarjeta de contenido fijo (gauge + estado, .double-card) y una
-   que debe crecer para llenar el espacio (bitácora de eventos,
-   .events-card). Se fija la primera a su alto natural y solo la segunda
-   crece — si no, alguna terminaba estirándose de más al alargar .sidebar
-   a los 578px de edición, dejando un hueco en blanco antes de la
-   bitácora. */
 html.layout-editing .sidebar-card.double-card {
   flex: 0 0 auto !important;
 }
@@ -291,4 +225,265 @@ html.layout-editing #layout-section-grid > #grid {
   height: auto !important;
   max-height: none !important;
   overflow-y: auto !important;
+}
+
+/* ... [Mantiene todo el inicio del archivo intacto hasta llegar al bloque #4] ... */
+
+/* ============================================================
+   4. DISEÑO REFINADO DEL SELECTOR DE POSICIÓN DE NOTIFICACIONES
+   ============================================================ */
+
+.equip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--panel-line);
+}
+
+.equip-row:last-child {
+  border-bottom: none;
+}
+
+.equip-name {
+  flex: 1;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.equip-name .sub {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: normal;
+  margin-top: 2px;
+}
+
+.position-selector-wrapper {
+  margin: 16px 0 6px;
+  padding: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--panel-line);
+  border-radius: 10px;
+}
+
+.position-selector-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.position-selector-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.position-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--text);
+  width: 100%;
+  text-align: left;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: 
+    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.position-option:hover {
+  border-color: var(--phosphor-dim);
+  background: var(--surface-2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.position-option:hover .position-icon svg {
+  transform: scale(1.1);
+}
+
+.position-option.active {
+  border-color: var(--phosphor);
+  background: color-mix(in srgb, var(--phosphor) 8%, var(--panel));
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    0 0 0 3px color-mix(in srgb, var(--phosphor) 25%, transparent);
+  transform: translateY(0); 
+}
+
+.position-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--panel-line);
+  flex-shrink: 0;
+  color: var(--text-dim);
+  transition: all 0.2s ease;
+}
+
+.position-option.active .position-icon {
+  color: var(--phosphor);
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--phosphor) 30%, var(--panel-line));
+}
+
+.position-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.2; 
+  transition: transform 0.2s ease;
+}
+
+.position-offset {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+html[data-theme="phosphor"] .position-option.active {
+  background: color-mix(in srgb, var(--phosphor) 12%, var(--panel));
+}
+
+html[data-theme="dark"] .position-option.active {
+  background: color-mix(in srgb, var(--phosphor) 12%, var(--panel));
+}
+
+/* ============================================================
+   RESPONSIVO / MÓVIL AUTOMÁTICO
+   ============================================================ */
+
+@media (max-width: 480px) {
+  .equip-name {
+    font-size: 13px;
+  }
+  
+  .equip-name .sub {
+    font-size: 10px;
+  }
+
+  /* Oculta por completo la sección completa de flechas de posición en celulares */
+  .layout-desktop-only {
+    display: none !important;
+  }
+}
+
+#settings-save-btn.has-changes {
+  background: var(--phosphor) !important;
+  color: var(--bg) !important;
+  font-weight: bold;
+  border-color: var(--phosphor) !important;
+  box-shadow: 0 0 12px var(--phosphor-dim);
+  animation: pulse-save-attention 2s infinite ease-in-out;
+}
+
+@keyframes pulse-save-attention {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); opacity: 0.95; }
+  100% { transform: scale(1); }
+}
+
+/* ============================================================
+   DIÁLOGO DE CONFIRMACIÓN PERSONALIZADO
+   ============================================================ */
+
+.custom-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 110; /* Por encima del settings-overlay */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeInConfirm 0.15s ease-out;
+}
+
+.custom-confirm-box {
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 10px;
+  padding: 20px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  font-family: var(--sans);
+  text-align: left;
+}
+
+.custom-confirm-box h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.custom-confirm-box p {
+  margin: 0 0 20px;
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.custom-confirm-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.custom-confirm-buttons button {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+@keyframes fadeInConfirm {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Corrección de herencia cruzada para el modal de configuración */
+.settings-modal-panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 640px; /* Tamaño completo que debe mantener siempre */
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+/* Evitar colapso durante el desvanecimiento de salida */
+.settings-closing {
+  opacity: 0 !important;
+  transform: scale(0.97) !important;
+  pointer-events: none;
 }
